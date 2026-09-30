@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sorties récentes — dashboard</title>
+<style>
+:root{--bg:#13131b;--card:#1c1c28;--line:#2c2c3c;--txt:#ececf3;--mut:#9a9ab0;--acc:#7b5bf5;--ok:#2fa46b;--ko:#d9534f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,sans-serif}
+main{max-width:920px;margin:0 auto;padding:20px 16px 60px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-size:22px;margin:0}h2{font-size:16px;margin:0 0 12px}
+section,#login{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}
+input[type=text],input[type=url],input[type=password],select{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:#13131b;color:var(--txt);font-size:14px}
+button{padding:8px 13px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-size:14px;cursor:pointer}
+button.sec{background:#33334a}button.del{background:var(--ko)}button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.grow{flex:1;min-width:180px}
+.tr{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;display:grid;gap:8px}
+.mut{color:var(--mut);font-size:13px}.ok{color:var(--ok)}.ko{color:var(--ko)}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+code{background:#13131b;padding:2px 6px;border-radius:6px;word-break:break-all;font-size:12px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000c;padding:10px 16px;border-radius:10px;display:none;max-width:90%}
+label.chk{display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<main>
+  <div id="login" hidden>
+    <h1>Connexion</h1>
+    <p class="mut">Mot de passe défini par la variable <code>ADMIN_PASSWORD</code>.</p>
+    <div class="row"><input id="pw" class="grow" type="password" placeholder="Mot de passe" autocomplete="current-password"><button id="loginBtn">Se connecter</button></div>
+    <p id="loginErr" class="ko"></p>
+  </div>
+
+  <div id="app" hidden>
+    <header><h1>Sorties récentes — dashboard</h1><button class="sec" id="logout">Déconnexion</button></header>
+    <section id="s-status"></section>
+    <section id="s-trackers"></section>
+    <section id="s-tmdb"></section>
+    <section id="s-options"></section>
+    <section id="s-plan"></section>
+    <section id="s-install"></section>
+    <section id="s-catalog"></section>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) e.append(c instanceof Node ? c : String(c ?? ''));
+  return e;
+}
+let toastT;
+function toast(msg, bad) {
+  const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; t.style.color = bad ? '#ff8f8b' : '#fff';
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 4500);
+}
+async function api(method, path, body) {
+  const r = await fetch('/admin/api' + path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 401 && path !== '/login') { showLogin(); throw new Error('Session expirée'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
+  return j;
+}
+const act = fn => async () => { try { await fn(); } catch (e) { toast(e.message, true); } };
+const when = t => t ? new Date(t).toLocaleString('fr-FR') : 'jamais';
+
+function showLogin() { $('#app').hidden = true; $('#login').hidden = false; $('#pw').focus(); }
+$('#loginBtn').onclick = async () => {
+  try { await api('POST', '/login', { password: $('#pw').value }); $('#pw').value = ''; $('#loginErr').textContent = ''; load(true); }
+  catch (e) { $('#loginErr').textContent = e.message; }
+};
+$('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); });
+$('#logout').onclick = act(async () => { await api('POST', '/logout'); showLogin(); });
+
+let S = null;
+async function load(full) {
+  try { S = await api('GET', '/state'); } catch { return; }
+  $('#login').hidden = true; $('#app').hidden = false;
+  renderStatus();
+  if (full) { renderTrackers(); renderTmdb(); renderOptions(); renderPlan(); renderInstall(); renderCatalog(); }
+}
+
+function renderStatus() {
+  const r = S.run, box = $('#s-status'); box.replaceChildren(h('h2', {}, 'État'));
+  box.append(h('p', {}, r.busy ? '⏳ Cycle en cours…' : 'Dernier cycle : ' + when(r.last) + (r.ms ? ' (' + Math.round(r.ms / 1000) + ' s)' : ''),
+    r.postponed ? h('span', { class: 'mut' }, '  — ' + r.postponed + ' torrent(s) reporté(s) au prochain cycle') : ''));
+  const rows = Object.keys(S.langs).map(l => {
+    const c = S.counts[l], st = r.stats[l] || {};
+    return h('tr', {}, h('td', {}, S.langs[l]), h('td', {}, c.movies), h('td', {}, c.series), h('td', {}, c.anime),
+      h('td', { class: 'mut' }, st.neuf == null ? '—' : `${st.neuf} nouveaux, ${st.ok} validés, ${st.ko} rejetés, ${st.err} en erreur`));
+  });
+  box.append(h('table', {}, h('tr', {}, ['Version', 'Films', 'Séries', 'Animés', 'Dernier cycle'].map(x => h('th', {}, x))), rows));
+  if (S.dvdsOn) box.append(h('p', { class: 'mut' }, 'dvdsreleasedates.com : ' + S.dvds + ' date(s) lue(s)' + (S.dvds ? '' : ' — 0 : la source est ignorée (page inaccessible ou format à ajuster dans parseDvds)')));
+  box.append(h('div', { class: 'row' },
+    h('button', { onclick: async ev => { const b = ev.target; b.disabled = true; toast('Cycle en cours (jusqu\'à ' + r.budgetS + ' s)…'); try { const x = await api('POST', '/refresh'); toast(x.message, x.ok === false); await load(true); } catch (e) { toast(e.message, true); } b.disabled = false; } }, 'Lancer un cycle maintenant'),
+    h('button', { class: 'sec', onclick: act(async () => { if (!confirm('Retraiter tous les torrents, y compris ceux déjà rejetés ?')) return; await api('POST', '/reset', { what: 'seen' }); toast('Torrents rejetés remis en file'); }) }, 'Retraiter les rejetés'),
+    h('button', { class: 'del', onclick: act(async () => { if (!confirm('Vider les 3 catalogues ?')) return; await api('POST', '/reset', { what: 'items' }); load(true); toast('Catalogues vidés'); }) }, 'Vider les catalogues')));
+}
+
+function trackerCard(t) {
+  const name = h('input', { type: 'text', placeholder: 'Nom (ex : C411)', value: t ? t.name : '' });
+  const url = h('input', { type: 'url', placeholder: 'URL Torznab, ex : https://tracker.exemple/api/torznab', value: t ? t.url : '' });
+  const key = h('input', { type: 'password', autocomplete: 'off', placeholder: t ? `Clé API (${t.keyHint}) — vide = inchangée` : 'Clé API du tracker' });
+  const en = h('input', { type: 'checkbox', checked: t ? t.enabled : true });
+  const line = h('div', { class: 'mut' });
+  if (t && t.status) {
+    line.append(t.status.ok ? h('span', { class: 'ok' }, `✔ ${t.status.count} torrents lus`) : h('span', { class: 'ko' }, '✖ ' + t.status.error), ' — ' + when(t.status.last));
+  } else if (t) line.textContent = 'Pas encore interrogé';
+  const body = () => ({ name: name.value, url: url.value, apikey: key.value, enabled: en.checked });
+  const btns = h('div', { class: 'row' },
+    h('button', { onclick: act(async () => { await api(t ? 'PUT' : 'POST', t ? '/trackers/' + t.id : '/trackers', body()); toast('Enregistré'); await load(true); }) }, t ? 'Enregistrer' : 'Ajouter le tracker'));
+  if (t) btns.append(
+    h('button', { class: 'sec', onclick: act(async () => { const r = await api('POST', `/trackers/${t.id}/test`); toast(r.message, !r.ok); }) }, 'Tester'),
+    h('button', { class: 'del', onclick: act(async () => { if (!confirm('Supprimer ce tracker ?')) return; await api('DELETE', '/trackers/' + t.id); await load(true); }) }, 'Supprimer'));
+  return h('div', { class: 'tr' }, h('div', { class: 'row' }, h('div', { class: 'grow' }, name), h('label', { class: 'chk' }, en, 'Actif')), url, key, line, btns);
+}
+function renderTrackers() {
+  const box = $('#s-trackers'); box.replaceChildren(h('h2', {}, 'Trackers (API Torznab)'));
+  if (!S.trackers.length) box.append(h('p', { class: 'mut' }, 'Aucun tracker. Ajoutez le premier ci-dessous : les torrents de tous les trackers actifs sont fusionnés dans les mêmes catalogues.'));
+  S.trackers.forEach(t => box.append(trackerCard(t)));
+  box.append(h('h2', {}, 'Ajouter un tracker'), trackerCard(null));
+}
+
+function renderTmdb() {
+  const box = $('#s-tmdb'); box.replaceChildren(h('h2', {}, 'Clé API TMDB'));
+  const key = h('input', { type: 'password', autocomplete: 'off', class: 'grow', placeholder: S.tmdb.set ? `Clé enregistrée (${S.tmdb.hint}) — laisser vide pour la conserver` : 'Clé API v3 ou jeton v4' });
+  box.append(h('div', { class: 'row' }, key,
+    h('button', { onclick: act(async () => { if (!key.value.trim()) return toast('Saisissez une clé', true); await api('PUT', '/tmdb', { key: key.value }); toast('Clé enregistrée'); await load(true); }) }, 'Enregistrer'),
+    h('button', { class: 'sec', onclick: act(async () => { const r = await api('POST', '/tmdb/test', { key: key.value }); toast(r.message, !r.ok); }) }, 'Tester')));
+}
+
+function renderOptions() {
+  const box = $('#s-options'); box.replaceChildren(h('h2', {}, 'Options'));
+  const c = h('input', { type: 'checkbox', checked: S.settings.streamInfo, onchange: act(async () => { await api('PUT', '/settings', { streamInfo: c.checked }); toast('Enregistré — réinstallez l\'addon dans Stremio pour appliquer'); }) });
+  box.append(h('label', { class: 'chk' }, c, 'Afficher une ligne « 🆕 Sortie récente + date » dans la liste des flux des titres du catalogue'),
+    h('p', { class: 'mut' }, 'C\'est une ligne d\'information, pas un flux lisible. Stremio relit le manifest à l\'installation : après changement, désinstallez puis réinstallez l\'addon.'));
+}
+
+function renderPlan() {
+  const box = $('#s-plan'); box.replaceChildren(h('h2', {}, 'Mise à jour automatique'));
+  box.append(h('p', {}, 'Vercel n\'a pas de processus permanent : les cycles sont déclenchés par une requête sur cette URL (remplacez SECRET par la variable CRON_SECRET) :'),
+    h('code', {}, location.origin + '/cron?key=SECRET'),
+    h('p', { class: 'mut' }, 'Plan Hobby : le cron intégré de Vercel ne tourne qu\'une fois par jour. Pour un cycle toutes les 30 min, programmez cette URL sur un service gratuit comme cron-job.org. Un cycle s\'arrête à ' + S.run.budgetS + ' s et reprend au suivant.'));
+}
+
+function renderInstall() {
+  const box = $('#s-install'); box.replaceChildren(h('h2', {}, 'Liens d\'installation (aucune clé dans l\'URL)'));
+  for (const l of Object.keys(S.langs)) {
+    const u = location.origin + '/' + l + '/manifest.json';
+    box.append(h('div', { style: 'margin-bottom:10px' }, h('b', {}, S.langs[l]), h('br'), h('code', {}, u), ' ',
+      h('a', { href: 'stremio://' + location.host + '/' + l + '/manifest.json' }, 'Installer dans Stremio')));
+  }
+}
+
+function renderCatalog() {
+  const box = $('#s-catalog'); box.replaceChildren(h('h2', {}, 'Contenu des catalogues'));
+  const sel = h('select', {}, Object.keys(S.langs).map(l => h('option', { value: l }, S.langs[l])));
+  const out = h('div');
+  const show = act(async () => {
+    const items = await api('GET', '/catalog/' + sel.value);
+    out.replaceChildren(items.length ? h('table', {}, h('tr', {}, ['Type', 'Titre', 'Détail', 'Vu le'].map(x => h('th', {}, x))),
+      items.map(i => h('tr', {}, h('td', {}, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série'), h('td', {}, i.name + (i.year ? ' (' + i.year + ')' : '')), h('td', { class: 'mut' }, i.desc), h('td', { class: 'mut' }, new Date(i.ts).toLocaleDateString('fr-FR')))))
+      : h('p', { class: 'mut' }, 'Catalogue vide pour le moment.'));
+  });
+  sel.onchange = show;
+  box.append(sel, h('div', { style: 'height:10px' }), out); show();
+}
+
+load(true);
+setInterval(() => { if (!$('#app').hidden && document.visibilityState === 'visible') load(false); }, 20000);
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sorties récentes — installation</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#13131b;color:#ececf3;max-width:520px;margin:40px auto;padding:0 16px;line-height:1.5}
+select{width:100%;padding:10px;border-radius:8px;border:1px solid #2c2c3c;background:#1c1c28;color:#ececf3;font-size:15px;margin-top:6px}
+a.btn{display:inline-block;margin-top:18px;padding:12px 18px;border-radius:8px;background:#2fa46b;color:#fff;text-decoration:none;font-size:16px}
+code{display:block;margin-top:14px;padding:10px;background:#1c1c28;border-radius:8px;word-break:break-all;font-size:12px}
+.mut{color:#9a9ab0;font-size:14px}
+</style>
+</head>
+<body>
+<h1>Sorties récentes</h1>
+<p>Catalogues Stremio des films, séries et animés qui viennent vraiment de sortir en torrent.</p>
+<label>Version souhaitée
+  <select id="lang"></select>
+</label>
+<p class="mut" id="hint"></p>
+<a class="btn" id="install" href="#">Installer dans Stremio</a>
+<code id="url"></code>
+<p class="mut">Catalogues : Films récents, Séries récentes, Animés récents. Aucun flux n'est fourni par cet addon.</p>
+<script>
+/*LANGS*/
+var HINTS = {
+  all: 'Toutes les releases, quelle que soit la langue (dont VOSTFR).',
+  vf: 'Uniquement les releases FRENCH, TRUEFRENCH, VFF, VFQ, VFI, VF2, VOF ou MULTI.',
+  vff: 'Uniquement les releases VFF, VF2, VFI, TRUEFRENCH ou VOF (MULTI ou FRENCH seuls ne suffisent pas).'
+};
+var sel = document.getElementById('lang');
+Object.keys(window.__LANGS).forEach(function (k) {
+  var o = document.createElement('option'); o.value = k; o.textContent = window.__LANGS[k]; sel.appendChild(o);
+});
+sel.value = window.__LANG;
+function update() {
+  var p = '/' + sel.value + '/manifest.json';
+  document.getElementById('install').href = 'stremio://' + location.host + p;
+  document.getElementById('url').textContent = location.origin + p;
+  document.getElementById('hint').textContent = HINTS[sel.value] || '';
+}
+sel.onchange = update; update();
+</script>
+</body>
+</html>
