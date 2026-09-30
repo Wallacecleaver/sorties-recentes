@@ -1,51 +1,391 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sorties récentes — dashboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorties récentes — Admin</title>
+<meta name="theme-color" content="#f97316">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AC%3C/text%3E%3C/svg%3E">
 <style>
-:root{--bg:#13131b;--card:#1c1c28;--line:#2c2c3c;--txt:#ececf3;--mut:#9a9ab0;--acc:#7b5bf5;--ok:#2fa46b;--ko:#d9534f}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,sans-serif}
-main{max-width:920px;margin:0 auto;padding:20px 16px 60px}
-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
-h1{font-size:22px;margin:0}h2{font-size:16px;margin:0 0 12px}
-section,#login{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}
-input[type=text],input[type=url],input[type=password],select{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:#13131b;color:var(--txt);font-size:14px}
-button{padding:8px 13px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-size:14px;cursor:pointer}
-button.sec{background:#33334a}button.del{background:var(--ko)}button:disabled{opacity:.5;cursor:default}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.grow{flex:1;min-width:180px}
-.tr{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;display:grid;gap:8px}
-.mut{color:var(--mut);font-size:13px}.ok{color:var(--ok)}.ko{color:var(--ko)}
-table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-code{background:#13131b;padding:2px 6px;border-radius:6px;word-break:break-all;font-size:12px}
-#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000c;padding:10px 16px;border-radius:10px;display:none;max-width:90%}
-label.chk{display:flex;gap:8px;align-items:center}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-primary:#09090b;--bg-secondary:#0f0f12;--bg-tertiary:#18181b;--bg-elevated:#1f1f23;--bg-hover:#27272a;
+  --border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);--border-strong:rgba(255,255,255,.15);
+  --text-primary:#fafafa;--text-secondary:#a1a1aa;--text-muted:#71717a;
+  --accent-primary:#f97316;--accent-primary-hover:#ea580c;--accent-primary-subtle:rgba(249,115,22,.1);
+  --accent-success:#10b981;--accent-success-subtle:rgba(16,185,129,.1);
+  --accent-warning:#f59e0b;--accent-warning-subtle:rgba(245,158,11,.1);
+  --accent-danger:#ef4444;--accent-danger-subtle:rgba(239,68,68,.1);
+  --accent-info:#3b82f6;--accent-info-subtle:rgba(59,130,246,.1);
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:18px;
+  --shadow-lg:0 8px 32px rgba(0,0,0,.5);
+  --transition-fast:150ms ease;
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code',Consolas,monospace;
+}
+html{font-size:15px;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent}
+body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6}
+svg{fill:currentColor}
+[hidden]{display:none!important}
+
+/* ---------- Login ---------- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(800px 400px at 50% -10%,rgba(249,115,22,.12),transparent 70%)}
+.login-card{width:100%;max-width:380px;background:var(--bg-secondary);border:1px solid var(--border-default);
+  border-radius:var(--radius-xl);padding:32px;box-shadow:var(--shadow-lg)}
+.login-card .logo{justify-content:center;margin-bottom:8px}
+.login-sub{text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:24px}
+.login-err{color:var(--accent-danger);font-size:13px;min-height:20px;margin-top:10px;text-align:center}
+
+/* ---------- Header ---------- */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.app-header{position:sticky;top:0;z-index:100;background:rgba(9,9,11,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-subtle)}
+.header-top{padding:16px 24px;display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto;width:100%;gap:12px}
+.logo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo-icon{width:36px;height:36px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;flex-shrink:0}
+.logo-icon svg{width:20px;height:20px}
+.logo-text{font-size:18px;font-weight:700}
+.logo-badge{font-size:11px;font-weight:500;color:var(--accent-primary);background:var(--accent-primary-subtle);padding:2px 8px;border-radius:9999px}
+.pill{font-size:11px;font-weight:500;padding:2px 10px;border-radius:9999px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.pill svg{width:12px;height:12px}
+.pill.ok{color:var(--accent-success);background:var(--accent-success-subtle)}
+.pill.busy{color:var(--accent-primary);background:var(--accent-primary-subtle)}
+.pill.idle{color:var(--text-muted);background:rgba(255,255,255,.05)}
+.pill.ko{color:var(--accent-danger);background:var(--accent-danger-subtle)}
+.header-actions{display:flex;align-items:center;gap:12px}
+.header-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-tertiary);border:1px solid var(--border-default);
+  border-radius:var(--radius-md);color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all var(--transition-fast)}
+.header-btn svg{width:16px;height:16px}
+.header-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
+.header-btn.danger:hover{background:var(--accent-danger-subtle);border-color:var(--accent-danger);color:var(--accent-danger)}
+.nav-tabs{display:flex;gap:4px;padding:0 24px;max-width:1400px;margin:0 auto;width:100%;overflow-x:auto}
+.nav-tab{display:flex;align-items:center;gap:8px;padding:12px 20px;background:transparent;border:none;border-bottom:2px solid transparent;
+  color:var(--text-muted);font-size:14px;font-weight:500;cursor:pointer;transition:all var(--transition-fast);margin-bottom:-1px;font-family:inherit;white-space:nowrap}
+.nav-tab:hover{color:var(--text-secondary)}
+.nav-tab.active{color:var(--accent-primary);border-bottom-color:var(--accent-primary)}
+.nav-tab svg{width:18px;height:18px}
+.app-main{flex:1;padding:32px 24px 80px}
+.main-content{max-width:1400px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+
+/* ---------- Stats ---------- */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.stat-card{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:20px;transition:all var(--transition-fast)}
+.stat-card:hover{border-color:var(--border-default)}
+.stat-card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.stat-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md)}
+.stat-icon svg{width:20px;height:20px}
+.stat-icon.primary{background:var(--accent-primary-subtle);color:var(--accent-primary)}
+.stat-icon.success{background:var(--accent-success-subtle);color:var(--accent-success)}
+.stat-icon.warning{background:var(--accent-warning-subtle);color:var(--accent-warning)}
+.stat-icon.danger{background:var(--accent-danger-subtle);color:var(--accent-danger)}
+.stat-icon.info{background:var(--accent-info-subtle);color:var(--accent-info)}
+.stat-label{font-size:13px;color:var(--text-muted);font-weight:500}
+.stat-value{font-size:28px;font-weight:700;line-height:1.2}
+.stat-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+
+/* ---------- Sections ---------- */
+.section{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);margin-bottom:24px;overflow:hidden}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border-subtle);background:rgba(255,255,255,.01);flex-wrap:wrap;gap:12px}
+.section-title{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.section-title svg{width:18px;height:18px;color:var(--accent-primary)}
+.section-count{color:var(--text-muted);font-size:13px}
+.section-buttons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.section-body{padding:24px}.section-body.no-padding{padding:0}
+.hint{font-size:13px;color:var(--text-muted);margin-top:10px;line-height:1.5}
+.empty{padding:40px 24px;text-align:center;color:var(--text-muted);font-size:14px}
+
+/* ---------- Tables ---------- */
+.table-container{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px 16px;text-align:left;font-size:13px;vertical-align:middle}
+th{background:var(--bg-tertiary);color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:11px;white-space:nowrap}
+td{border-bottom:1px solid var(--border-subtle)}
+td small{color:var(--text-muted)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.url-cell{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.num{font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:3px 8px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;text-transform:uppercase;white-space:nowrap}
+.badge.primary{background:var(--accent-primary-subtle);color:var(--accent-primary)}
+.badge.success{background:var(--accent-success-subtle);color:var(--accent-success)}
+.badge.danger{background:var(--accent-danger-subtle);color:var(--accent-danger)}
+.badge.warning{background:var(--accent-warning-subtle);color:var(--accent-warning)}
+.badge.info{background:var(--accent-info-subtle);color:var(--accent-info)}
+.badge.muted{background:rgba(255,255,255,.06);color:var(--text-muted)}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;font-weight:600;border:1px solid transparent;border-radius:var(--radius-md);
+  cursor:pointer;transition:all var(--transition-fast);font-family:inherit;white-space:nowrap}
+.btn svg{width:16px;height:16px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-solid{background:var(--accent-primary);color:#fff}.btn-solid:hover:not(:disabled){background:var(--accent-primary-hover)}
+.btn-primary{background:rgba(249,115,22,.15);color:var(--accent-primary)}.btn-primary:hover:not(:disabled){background:rgba(249,115,22,.25)}
+.btn-ghost{background:var(--bg-tertiary);border-color:var(--border-default);color:var(--text-secondary)}.btn-ghost:hover:not(:disabled){background:var(--bg-hover);color:var(--text-primary)}
+.btn-danger{background:rgba(239,68,68,.15);color:#ef4444}.btn-danger:hover:not(:disabled){background:rgba(239,68,68,.25)}
+.btn-small{padding:6px 12px;font-size:12px}
+.btn-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;background:transparent;border:1px solid var(--border-default);
+  border-radius:var(--radius-sm);color:var(--text-muted);cursor:pointer;transition:all var(--transition-fast)}
+.btn-icon svg{width:16px;height:16px}
+.btn-icon:hover{background:var(--bg-hover);border-color:var(--accent-primary);color:var(--accent-primary)}
+.btn-icon.danger:hover{border-color:var(--accent-danger);color:var(--accent-danger)}
+.btn-icon:disabled{opacity:.5;cursor:wait}
+.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- Forms ---------- */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:8px}
+.form-input{width:100%;padding:10px 12px;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:14px;font-family:inherit}
+.form-input:focus{outline:none;border-color:var(--accent-primary)}
+.form-input::placeholder{color:var(--text-muted)}
+.input-row{display:flex;gap:8px;flex-wrap:wrap}.input-row .form-input{flex:1;min-width:200px}
+.switch{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:var(--bg-hover);border-radius:22px;cursor:pointer;transition:var(--transition-fast)}
+.switch span::before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:var(--transition-fast)}
+.switch input:checked+span{background:var(--accent-primary)}
+.switch input:checked+span::before{transform:translateX(18px)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.setting-row .t{font-weight:500}.setting-row .d{font-size:13px;color:var(--text-muted);margin-top:2px}
+code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border-subtle);padding:3px 8px;border-radius:var(--radius-sm);word-break:break-all;color:var(--text-secondary)}
+.copy-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.install-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--border-subtle)}
+.install-row:last-child{border-bottom:none;padding-bottom:0}.install-row:first-child{padding-top:0}
+.install-row .t{font-weight:600;margin-bottom:4px}
+.seg{display:inline-flex;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{background:transparent;border:none;color:var(--text-muted);padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit}
+.seg button.active{background:var(--accent-primary-subtle);color:var(--accent-primary)}
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border-subtle)}
+.filters .form-input{max-width:260px;padding:7px 12px;font-size:13px}
+
+/* ---------- Toasts & modals ---------- */
+.toast-container{position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:10px;max-width:400px;width:calc(100% - 40px)}
+.toast{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);animation:tin .3s ease}
+.toast.hiding{animation:tout .3s ease forwards}
+@keyframes tin{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+@keyframes tout{to{transform:translateX(100%);opacity:0}}
+.toast-icon{width:20px;height:20px;flex-shrink:0;margin-top:2px}
+.toast-title{font-size:13px;font-weight:600}.toast-message{font-size:13px;color:var(--text-secondary);margin-top:2px;word-break:break-word}
+.toast.success{border-left:3px solid var(--accent-success)}.toast.success .toast-icon{color:var(--accent-success)}
+.toast.error{border-left:3px solid var(--accent-danger)}.toast.error .toast-icon{color:var(--accent-danger)}
+.toast.info{border-left:3px solid var(--accent-info)}.toast.info .toast-icon{color:var(--accent-info)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal.show{display:flex}
+.modal-content{background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:24px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-title{font-size:18px;font-weight:600;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px}
+.modal-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:8px}
+.confirm-icon{width:48px;height:48px;background:rgba(239,68,68,.15);color:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.confirm-icon.warn{background:var(--accent-primary-subtle);color:var(--accent-primary)}
+.confirm-icon svg{width:24px;height:24px}
+.confirm-text{text-align:center}.confirm-text .modal-sub{margin-bottom:24px}
+.modal-actions.center{justify-content:center}
+
+@media(max-width:768px){
+  .header-top{padding:12px 16px}.nav-tabs{padding:0 8px}.nav-tab{padding:12px 14px}
+  .app-main{padding:20px 16px 60px}.stat-value{font-size:24px}.header-btn span{display:none}.header-btn{padding:8px 10px}
+  .section-header{padding:16px}.section-body{padding:16px}.logo-badge{display:none}
+}
 </style>
 </head>
 <body>
-<main>
-  <div id="login" hidden>
-    <h1>Connexion</h1>
-    <p class="mut">Mot de passe défini par la variable <code>ADMIN_PASSWORD</code>.</p>
-    <div class="row"><input id="pw" class="grow" type="password" placeholder="Mot de passe" autocomplete="current-password"><button id="loginBtn">Se connecter</button></div>
-    <p id="loginErr" class="ko"></p>
-  </div>
 
-  <div id="app" hidden>
-    <header><h1>Sorties récentes — dashboard</h1><button class="sec" id="logout">Déconnexion</button></header>
-    <section id="s-status"></section>
-    <section id="s-trackers"></section>
-    <section id="s-tmdb"></section>
-    <section id="s-options"></section>
-    <section id="s-plan"></section>
-    <section id="s-install"></section>
-    <section id="s-catalog"></section>
+<!-- Connexion -->
+<div class="login-wrap" id="login" hidden>
+  <div class="login-card">
+    <div class="logo"><div class="logo-icon" data-icon="film"></div><span class="logo-text">Sorties récentes</span></div>
+    <div class="login-sub">Connexion à l'administration</div>
+    <div class="form-group"><label for="pw">Mot de passe</label>
+      <input id="pw" class="form-input" type="password" autocomplete="current-password" placeholder="ADMIN_PASSWORD"></div>
+    <button class="btn btn-solid" id="loginBtn" style="width:100%;justify-content:center">Se connecter</button>
+    <div class="login-err" id="loginErr"></div>
   </div>
-</main>
-<div id="toast"></div>
+</div>
+
+<!-- Application -->
+<div class="app" id="app" hidden>
+  <header class="app-header">
+    <div class="header-top">
+      <div class="logo">
+        <div class="logo-icon" data-icon="film"></div>
+        <span class="logo-text">Sorties récentes</span>
+        <span class="logo-badge">Admin</span>
+        <span class="pill idle" id="cyclePill"><span data-icon="clock"></span><span id="cycleText">--</span></span>
+      </div>
+      <div class="header-actions">
+        <button class="header-btn danger" id="logout"><span data-icon="logout"></span><span>Déconnexion</span></button>
+      </div>
+    </div>
+    <nav class="nav-tabs" id="tabs">
+      <button class="nav-tab active" data-page="dashboard"><span data-icon="dashboard"></span>Tableau de bord</button>
+      <button class="nav-tab" data-page="trackers"><span data-icon="server"></span>Trackers</button>
+      <button class="nav-tab" data-page="catalog"><span data-icon="film"></span>Catalogues</button>
+      <button class="nav-tab" data-page="settings"><span data-icon="settings"></span>Réglages</button>
+    </nav>
+  </header>
+
+  <main class="app-main"><div class="main-content">
+
+    <!-- Tableau de bord -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid" id="stats"></div>
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><span data-icon="layers"></span>Versions du catalogue</div>
+          <div class="section-buttons">
+            <button class="btn btn-solid" id="runBtn"><span data-icon="refresh"></span>Lancer un cycle</button>
+            <button class="btn btn-ghost" id="seenBtn"><span data-icon="replay"></span>Retraiter les rejetés</button>
+            <button class="btn btn-danger" id="clearBtn"><span data-icon="trash"></span>Vider les catalogues</button>
+          </div>
+        </div>
+        <div class="section-body no-padding"><div class="table-container"><table>
+          <thead><tr><th>Version</th><th>Films</th><th>Séries</th><th>Animés</th><th>Nouveaux</th><th>Validés</th><th>Rejetés</th><th>Erreurs</th></tr></thead>
+          <tbody id="langRows"></tbody>
+        </table></div></div>
+      </div>
+      <div class="section" id="alerts" hidden>
+        <div class="section-header"><div class="section-title"><span data-icon="warning"></span>À vérifier</div></div>
+        <div class="section-body" id="alertsBody"></div>
+      </div>
+    </div>
+
+    <!-- Trackers -->
+    <div class="page" id="page-trackers">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><span data-icon="server"></span>Trackers (API Torznab)<span class="section-count" id="trCount"></span></div>
+          <div class="section-buttons"><button class="btn btn-solid" id="addTr"><span data-icon="add"></span>Ajouter un tracker</button></div>
+        </div>
+        <div class="section-body no-padding" id="trBody"></div>
+      </div>
+      <p class="hint">Les torrents de tous les trackers actifs sont fusionnés dans les mêmes catalogues. Les clés ne sont jamais renvoyées au navigateur (seuls les 4 derniers caractères sont affichés).</p>
+    </div>
+
+    <!-- Catalogues -->
+    <div class="page" id="page-catalog">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><span data-icon="film"></span>Contenu des catalogues<span class="section-count" id="catCount"></span></div>
+          <div class="seg" id="catLang"></div>
+        </div>
+        <div class="filters">
+          <div class="seg" id="catType">
+            <button data-t="all" class="active">Tout</button><button data-t="movie">Films</button><button data-t="series">Séries</button><button data-t="anime">Animés</button>
+          </div>
+          <input class="form-input" id="catSearch" type="search" placeholder="Rechercher un titre…">
+        </div>
+        <div class="section-body no-padding"><div class="table-container" id="catBody"></div></div>
+      </div>
+    </div>
+
+    <!-- Réglages -->
+    <div class="page" id="page-settings">
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="key"></span>Clé API TMDB</div><span id="tmdbBadge"></span></div>
+        <div class="section-body">
+          <div class="input-row">
+            <input class="form-input" id="tmdbKey" type="password" autocomplete="off" placeholder="Clé API v3 ou jeton v4">
+            <button class="btn btn-solid" id="tmdbSave">Enregistrer</button>
+            <button class="btn btn-ghost" id="tmdbTest">Tester</button>
+          </div>
+          <p class="hint" id="tmdbHint"></p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="tune"></span>Options</div></div>
+        <div class="section-body">
+          <div class="setting-row">
+            <div><div class="t">Ligne d'info dans les flux</div>
+              <div class="d">Affiche « 🆕 Sortie récente + date » dans la liste des flux des titres du catalogue (ce n'est pas un flux lisible). Après changement, désinstallez puis réinstallez l'addon dans Stremio.</div></div>
+            <label class="switch"><input type="checkbox" id="optStream"><span></span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Mise à jour automatique</div></div>
+        <div class="section-body">
+          <p style="margin-bottom:12px">Vercel n'a pas de processus permanent : un cycle est déclenché par une requête sur cette URL (remplacez <code>SECRET</code> par votre <code>CRON_SECRET</code>) :</p>
+          <div class="copy-line"><code id="cronUrl"></code><button class="btn btn-ghost btn-small" id="copyCron"><span data-icon="copy"></span>Copier</button></div>
+          <p class="hint" id="cronHint"></p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="download"></span>Installation dans Stremio</div>
+          <a class="btn btn-ghost btn-small" href="/configure" target="_blank" rel="noopener">Page /configure</a></div>
+        <div class="section-body" id="installBody"></div>
+      </div>
+    </div>
+
+  </div></main>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<!-- Modale tracker -->
+<div class="modal" id="trModal">
+  <div class="modal-content">
+    <div class="modal-title" id="trModalTitle">Ajouter un tracker</div>
+    <div class="modal-sub">URL de l'API Torznab et clé API fournies par votre tracker.</div>
+    <div class="form-group"><label>Nom</label><input class="form-input" id="trName" placeholder="ex : C411"></div>
+    <div class="form-group"><label>URL Torznab</label><input class="form-input" id="trUrl" type="url" placeholder="https://tracker.exemple/api/torznab"></div>
+    <div class="form-group"><label>Clé API</label><input class="form-input" id="trKey" type="password" autocomplete="off"></div>
+    <div class="setting-row" style="margin-bottom:20px"><div class="t">Tracker actif</div><label class="switch"><input type="checkbox" id="trEnabled" checked><span></span></label></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="trCancel">Annuler</button>
+      <button class="btn btn-solid" id="trSave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale de confirmation -->
+<div class="modal" id="confirmModal">
+  <div class="modal-content" style="max-width:400px">
+    <div class="confirm-icon" id="cfIcon"></div>
+    <div class="confirm-text"><div class="modal-title" id="cfTitle"></div><div class="modal-sub" id="cfMsg"></div></div>
+    <div class="modal-actions center">
+      <button class="btn btn-ghost" id="cfNo">Annuler</button>
+      <button class="btn btn-danger" id="cfYes">Confirmer</button>
+    </div>
+  </div>
+</div>
 
 <script>
+const ICONS = {
+  film: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-2z',
+  dashboard: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z',
+  server: 'M20 13H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 19c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM20 3H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
+  settings: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+  logout: 'M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z',
+  clock: 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z',
+  refresh: 'M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z',
+  replay: 'M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z',
+  trash: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+  edit: 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
+  add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
+  play: 'M8 5v14l11-7z',
+  copy: 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z',
+  tv: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z',
+  star: 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z',
+  check: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
+  warning: 'M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z',
+  info: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',
+  download: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
+  layers: 'M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z',
+  key: 'M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
+  tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+};
+const svg = n => `<svg viewBox="0 0 24 24" width="18" height="18"><path d="${ICONS[n]}"/></svg>`;
+const icon = n => { const s = document.createElement('span'); s.style.display = 'inline-flex'; s.innerHTML = svg(n); return s; };
+function hydrateIcons(root = document) { root.querySelectorAll('[data-icon]').forEach(e => { if (!e.firstChild) e.innerHTML = svg(e.dataset.icon); e.style.display = 'inline-flex'; }); }
+
 const $ = s => document.querySelector(s);
 function h(tag, props, ...kids) {
   const e = document.createElement(tag);
@@ -54,14 +394,31 @@ function h(tag, props, ...kids) {
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
     else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
   }
-  for (const c of kids.flat()) e.append(c instanceof Node ? c : String(c ?? ''));
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c instanceof Node ? c : String(c));
   return e;
 }
-let toastT;
-function toast(msg, bad) {
-  const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; t.style.color = bad ? '#ff8f8b' : '#fff';
-  clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 4500);
+
+/* ---------- Toasts ---------- */
+function toast(type, title, msg) {
+  const t = h('div', { class: 'toast ' + type }, h('span', { class: 'toast-icon' }, icon(type === 'error' ? 'warning' : type === 'info' ? 'info' : 'check')),
+    h('div', {}, h('div', { class: 'toast-title' }, title), msg ? h('div', { class: 'toast-message' }, msg) : ''));
+  $('#toasts').append(t);
+  setTimeout(() => { t.classList.add('hiding'); setTimeout(() => t.remove(), 300); }, type === 'error' ? 6000 : 3500);
 }
+
+/* ---------- Confirmation ---------- */
+function confirmBox({ title, message, yes = 'Confirmer', danger = true }) {
+  return new Promise(res => {
+    $('#cfTitle').textContent = title; $('#cfMsg').textContent = message; $('#cfYes').textContent = yes;
+    $('#cfYes').className = 'btn ' + (danger ? 'btn-danger' : 'btn-solid');
+    const ic = $('#cfIcon'); ic.className = 'confirm-icon' + (danger ? '' : ' warn'); ic.innerHTML = svg(danger ? 'trash' : 'replay');
+    const m = $('#confirmModal'); m.classList.add('show');
+    const done = v => { m.classList.remove('show'); $('#cfYes').onclick = $('#cfNo').onclick = null; res(v); };
+    $('#cfYes').onclick = () => done(true); $('#cfNo').onclick = () => done(false);
+  });
+}
+
+/* ---------- API ---------- */
 async function api(method, path, body) {
   const r = await fetch('/admin/api' + path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
   if (r.status === 401 && path !== '/login') { showLogin(); throw new Error('Session expirée'); }
@@ -69,113 +426,207 @@ async function api(method, path, body) {
   if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
   return j;
 }
-const act = fn => async () => { try { await fn(); } catch (e) { toast(e.message, true); } };
-const when = t => t ? new Date(t).toLocaleString('fr-FR') : 'jamais';
+const guard = fn => async (...a) => { try { await fn(...a); } catch (e) { toast('error', 'Erreur', e.message); } };
 
+/* ---------- Utilitaires ---------- */
+function ago(t) {
+  if (!t) return 'jamais';
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return 'à l\'instant';
+  if (s < 3600) return 'il y a ' + Math.round(s / 60) + ' min';
+  if (s < 86400) return 'il y a ' + Math.round(s / 3600) + ' h';
+  return 'il y a ' + Math.round(s / 86400) + ' j';
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast('success', 'Copié'); }
+  catch { const i = h('textarea'); i.value = text; document.body.append(i); i.select(); document.execCommand('copy'); i.remove(); toast('success', 'Copié'); }
+}
+const fullDate = t => new Date(t).toLocaleDateString('fr-FR');
+
+/* ---------- Navigation ---------- */
+let S = null, page = (location.hash || '#dashboard').slice(1);
+function goto(p) {
+  if (!['dashboard', 'trackers', 'catalog', 'settings'].includes(p)) p = 'dashboard';
+  page = p; history.replaceState(null, '', '#' + p);
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.page === p));
+  document.querySelectorAll('.page').forEach(x => x.classList.toggle('active', x.id === 'page-' + p));
+  if (p === 'catalog') loadCatalog();
+}
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('.nav-tab'); if (b) goto(b.dataset.page); });
+
+/* ---------- Connexion ---------- */
 function showLogin() { $('#app').hidden = true; $('#login').hidden = false; $('#pw').focus(); }
 $('#loginBtn').onclick = async () => {
-  try { await api('POST', '/login', { password: $('#pw').value }); $('#pw').value = ''; $('#loginErr').textContent = ''; load(true); }
+  try { await api('POST', '/login', { password: $('#pw').value }); $('#pw').value = ''; $('#loginErr').textContent = ''; await load(true); }
   catch (e) { $('#loginErr').textContent = e.message; }
 };
 $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); });
-$('#logout').onclick = act(async () => { await api('POST', '/logout'); showLogin(); });
+$('#logout').onclick = guard(async () => { await api('POST', '/logout'); showLogin(); });
 
-let S = null;
+/* ---------- Chargement & rendu ---------- */
 async function load(full) {
   try { S = await api('GET', '/state'); } catch { return; }
   $('#login').hidden = true; $('#app').hidden = false;
-  renderStatus();
-  if (full) { renderTrackers(); renderTmdb(); renderOptions(); renderPlan(); renderInstall(); renderCatalog(); }
+  renderHeader(); renderDashboard(); renderTrackers();
+  if (full) { renderSettings(); goto(page); }
+  else renderInstall();
 }
 
-function renderStatus() {
-  const r = S.run, box = $('#s-status'); box.replaceChildren(h('h2', {}, 'État'));
-  box.append(h('p', {}, r.busy ? '⏳ Cycle en cours…' : 'Dernier cycle : ' + when(r.last) + (r.ms ? ' (' + Math.round(r.ms / 1000) + ' s)' : ''),
-    r.postponed ? h('span', { class: 'mut' }, '  — ' + r.postponed + ' torrent(s) reporté(s) au prochain cycle') : ''));
-  const rows = Object.keys(S.langs).map(l => {
-    const c = S.counts[l], st = r.stats[l] || {};
-    return h('tr', {}, h('td', {}, S.langs[l]), h('td', {}, c.movies), h('td', {}, c.series), h('td', {}, c.anime),
-      h('td', { class: 'mut' }, st.neuf == null ? '—' : `${st.neuf} nouveaux, ${st.ok} validés, ${st.ko} rejetés, ${st.err} en erreur`));
-  });
-  box.append(h('table', {}, h('tr', {}, ['Version', 'Films', 'Séries', 'Animés', 'Dernier cycle'].map(x => h('th', {}, x))), rows));
-  if (S.dvdsOn) box.append(h('p', { class: 'mut' }, 'dvdsreleasedates.com : ' + S.dvds + ' date(s) lue(s)' + (S.dvds ? '' : ' — 0 : la source est ignorée (page inaccessible ou format à ajuster dans parseDvds)')));
-  box.append(h('div', { class: 'row' },
-    h('button', { onclick: async ev => { const b = ev.target; b.disabled = true; toast('Cycle en cours (jusqu\'à ' + r.budgetS + ' s)…'); try { const x = await api('POST', '/refresh'); toast(x.message, x.ok === false); await load(true); } catch (e) { toast(e.message, true); } b.disabled = false; } }, 'Lancer un cycle maintenant'),
-    h('button', { class: 'sec', onclick: act(async () => { if (!confirm('Retraiter tous les torrents, y compris ceux déjà rejetés ?')) return; await api('POST', '/reset', { what: 'seen' }); toast('Torrents rejetés remis en file'); }) }, 'Retraiter les rejetés'),
-    h('button', { class: 'del', onclick: act(async () => { if (!confirm('Vider les 3 catalogues ?')) return; await api('POST', '/reset', { what: 'items' }); load(true); toast('Catalogues vidés'); }) }, 'Vider les catalogues')));
+function renderHeader() {
+  const r = S.run, pill = $('#cyclePill');
+  pill.className = 'pill ' + (r.busy ? 'busy' : r.last ? 'ok' : 'idle');
+  $('#cycleText').textContent = r.busy ? 'Cycle en cours…' : r.last ? 'Dernier cycle ' + ago(r.last) : 'Aucun cycle';
+  $('#runBtn').disabled = r.busy;
 }
 
-function trackerCard(t) {
-  const name = h('input', { type: 'text', placeholder: 'Nom (ex : C411)', value: t ? t.name : '' });
-  const url = h('input', { type: 'url', placeholder: 'URL Torznab, ex : https://tracker.exemple/api/torznab', value: t ? t.url : '' });
-  const key = h('input', { type: 'password', autocomplete: 'off', placeholder: t ? `Clé API (${t.keyHint}) — vide = inchangée` : 'Clé API du tracker' });
-  const en = h('input', { type: 'checkbox', checked: t ? t.enabled : true });
-  const line = h('div', { class: 'mut' });
-  if (t && t.status) {
-    line.append(t.status.ok ? h('span', { class: 'ok' }, `✔ ${t.status.count} torrents lus`) : h('span', { class: 'ko' }, '✖ ' + t.status.error), ' — ' + when(t.status.last));
-  } else if (t) line.textContent = 'Pas encore interrogé';
-  const body = () => ({ name: name.value, url: url.value, apikey: key.value, enabled: en.checked });
-  const btns = h('div', { class: 'row' },
-    h('button', { onclick: act(async () => { await api(t ? 'PUT' : 'POST', t ? '/trackers/' + t.id : '/trackers', body()); toast('Enregistré'); await load(true); }) }, t ? 'Enregistrer' : 'Ajouter le tracker'));
-  if (t) btns.append(
-    h('button', { class: 'sec', onclick: act(async () => { const r = await api('POST', `/trackers/${t.id}/test`); toast(r.message, !r.ok); }) }, 'Tester'),
-    h('button', { class: 'del', onclick: act(async () => { if (!confirm('Supprimer ce tracker ?')) return; await api('DELETE', '/trackers/' + t.id); await load(true); }) }, 'Supprimer'));
-  return h('div', { class: 'tr' }, h('div', { class: 'row' }, h('div', { class: 'grow' }, name), h('label', { class: 'chk' }, en, 'Actif')), url, key, line, btns);
+function statCard(ic, tone, label, value, sub) {
+  return h('div', { class: 'stat-card' }, h('div', { class: 'stat-card-header' }, h('div', { class: 'stat-icon ' + tone }, icon(ic)), h('div', { class: 'stat-label' }, label)),
+    h('div', { class: 'stat-value' }, value), sub ? h('div', { class: 'stat-sub' }, sub) : '');
+}
+function renderDashboard() {
+  const c = S.counts.all || { movies: 0, series: 0, anime: 0 }, r = S.run;
+  const act = S.trackers.filter(t => t.enabled).length;
+  $('#stats').replaceChildren(
+    statCard('film', 'primary', 'Films', c.movies, 'Toutes les versions'),
+    statCard('tv', 'info', 'Séries', c.series, 'Toutes les versions'),
+    statCard('star', 'warning', 'Animés', c.anime, 'Toutes les versions'),
+    statCard('server', act ? 'success' : 'danger', 'Trackers actifs', act + ' / ' + S.trackers.length, act ? '' : 'Aucun tracker actif'),
+    statCard('clock', r.busy ? 'primary' : 'success', 'Dernier cycle', r.busy ? 'En cours' : ago(r.last), r.ms ? 'Durée : ' + Math.round(r.ms / 1000) + ' s' + (r.postponed ? ' · ' + r.postponed + ' reporté(s)' : '') : ''),
+    statCard('download', S.dvdsOn && !S.dvds ? 'danger' : 'success', 'dvdsreleasedates', S.dvdsOn ? S.dvds : 'Désactivé', S.dvdsOn ? 'date(s) de sortie numérique lue(s)' : '')
+  );
+  $('#langRows').replaceChildren(...Object.keys(S.langs).map(l => {
+    const k = S.counts[l] || { movies: 0, series: 0, anime: 0 }, st = r.stats[l];
+    const n = v => h('td', { class: 'num' }, st ? v : '—');
+    return h('tr', {}, h('td', {}, h('b', {}, S.langs[l])), h('td', { class: 'num' }, k.movies), h('td', { class: 'num' }, k.series), h('td', { class: 'num' }, k.anime),
+      n(st && st.neuf), n(st && st.ok), n(st && st.ko), h('td', { class: 'num' }, st ? (st.err ? h('span', { class: 'badge danger' }, st.err) : 0) : '—'));
+  }));
+  const al = [];
+  if (!S.tmdb.set) al.push(['danger', 'Clé TMDB manquante', 'Ajoutez-la dans Réglages : sans elle, aucun cycle ne peut tourner.']);
+  if (!S.trackers.length) al.push(['danger', 'Aucun tracker', 'Ajoutez votre premier tracker dans l\'onglet Trackers.']);
+  S.trackers.filter(t => t.status && !t.status.ok).forEach(t => al.push(['warning', 'Tracker « ' + t.name + ' » en erreur', t.status.error]));
+  if (S.dvdsOn && !S.dvds && r.last) al.push(['warning', 'dvdsreleasedates.com : 0 date lue', 'Source ignorée (page inaccessible ou format à ajuster dans parseDvds). Les films restent validés par les dates TMDB.']);
+  if (r.stats && Object.values(r.stats).some(s => s.err)) al.push(['warning', 'Erreurs transitoires', 'Certains torrents seront retentés au prochain cycle.']);
+  $('#alerts').hidden = !al.length;
+  $('#alertsBody').replaceChildren(...al.map(([tone, t, d]) => h('div', { style: 'display:flex;gap:12px;align-items:flex-start;padding:6px 0' }, h('span', { class: 'badge ' + tone }, tone === 'danger' ? 'Action' : 'Info'), h('div', {}, h('b', {}, t), h('div', { class: 'hint', style: 'margin-top:2px' }, d)))));
+}
+
+function statusBadge(t) {
+  if (!t.enabled) return h('span', { class: 'badge muted' }, 'Désactivé');
+  if (!t.status) return h('span', { class: 'badge muted' }, 'Pas encore interrogé');
+  return t.status.ok ? h('span', { class: 'badge success' }, t.status.count + ' torrents') : h('span', { class: 'badge danger', title: t.status.error }, 'Erreur');
 }
 function renderTrackers() {
-  const box = $('#s-trackers'); box.replaceChildren(h('h2', {}, 'Trackers (API Torznab)'));
-  if (!S.trackers.length) box.append(h('p', { class: 'mut' }, 'Aucun tracker. Ajoutez le premier ci-dessous : les torrents de tous les trackers actifs sont fusionnés dans les mêmes catalogues.'));
-  S.trackers.forEach(t => box.append(trackerCard(t)));
-  box.append(h('h2', {}, 'Ajouter un tracker'), trackerCard(null));
+  $('#trCount').textContent = S.trackers.length ? S.trackers.length + ' tracker(s)' : '';
+  const box = $('#trBody');
+  if (!S.trackers.length) { box.replaceChildren(h('div', { class: 'empty' }, 'Aucun tracker configuré. Cliquez sur « Ajouter un tracker ».')); return; }
+  box.replaceChildren(h('div', { class: 'table-container' }, h('table', {},
+    h('thead', {}, h('tr', {}, ['Nom', 'URL', 'Clé', 'État', 'Dernier relevé', 'Actif', ''].map(x => h('th', {}, x)))),
+    h('tbody', {}, S.trackers.map(t => {
+      const tst = h('button', { class: 'btn-icon', title: 'Tester la connexion' }, icon('play'));
+      tst.onclick = guard(async () => { tst.disabled = true; try { const r = await api('POST', `/trackers/${t.id}/test`); toast(r.ok ? 'success' : 'error', r.ok ? t.name : 'Échec du test', r.message); } finally { tst.disabled = false; } });
+      const sw = h('input', { type: 'checkbox', checked: t.enabled });
+      sw.onchange = guard(async () => { try { await api('PUT', '/trackers/' + t.id, { enabled: sw.checked }); await load(false); } catch (e) { sw.checked = !sw.checked; throw e; } });
+      return h('tr', {}, h('td', {}, h('b', {}, t.name)), h('td', { class: 'url-cell', title: t.url }, t.url), h('td', {}, h('code', {}, t.keyHint)),
+        h('td', {}, statusBadge(t)), h('td', {}, h('small', {}, t.status ? ago(t.status.last) : '—')),
+        h('td', {}, h('label', { class: 'switch' }, sw, h('span'))),
+        h('td', {}, h('div', { class: 'row-actions' }, tst,
+          h('button', { class: 'btn-icon', title: 'Modifier', onclick: () => openTracker(t) }, icon('edit')),
+          h('button', { class: 'btn-icon danger', title: 'Supprimer', onclick: guard(async () => {
+            if (!(await confirmBox({ title: 'Supprimer ce tracker ?', message: '« ' + t.name + ' » ne sera plus interrogé. Les titres déjà validés restent dans les catalogues.', yes: 'Supprimer' }))) return;
+            await api('DELETE', '/trackers/' + t.id); toast('success', 'Tracker supprimé'); await load(false);
+          }) }, icon('trash'))))); }))))) ;
 }
 
-function renderTmdb() {
-  const box = $('#s-tmdb'); box.replaceChildren(h('h2', {}, 'Clé API TMDB'));
-  const key = h('input', { type: 'password', autocomplete: 'off', class: 'grow', placeholder: S.tmdb.set ? `Clé enregistrée (${S.tmdb.hint}) — laisser vide pour la conserver` : 'Clé API v3 ou jeton v4' });
-  box.append(h('div', { class: 'row' }, key,
-    h('button', { onclick: act(async () => { if (!key.value.trim()) return toast('Saisissez une clé', true); await api('PUT', '/tmdb', { key: key.value }); toast('Clé enregistrée'); await load(true); }) }, 'Enregistrer'),
-    h('button', { class: 'sec', onclick: act(async () => { const r = await api('POST', '/tmdb/test', { key: key.value }); toast(r.message, !r.ok); }) }, 'Tester')));
+/* Modale tracker */
+let editing = null;
+function openTracker(t) {
+  editing = t || null;
+  $('#trModalTitle').textContent = t ? 'Modifier le tracker' : 'Ajouter un tracker';
+  $('#trName').value = t ? t.name : ''; $('#trUrl').value = t ? t.url : ''; $('#trKey').value = '';
+  $('#trKey').placeholder = t ? 'Clé enregistrée (' + t.keyHint + ') — vide = inchangée' : 'Clé API du tracker';
+  $('#trEnabled').checked = t ? t.enabled : true;
+  $('#trModal').classList.add('show'); $('#trName').focus();
 }
+const closeTracker = () => $('#trModal').classList.remove('show');
+$('#addTr').onclick = () => openTracker(null);
+$('#trCancel').onclick = closeTracker;
+$('#trModal').addEventListener('mousedown', e => { if (e.target.id === 'trModal') closeTracker(); });
+$('#trSave').onclick = guard(async () => {
+  const body = { name: $('#trName').value, url: $('#trUrl').value, apikey: $('#trKey').value, enabled: $('#trEnabled').checked };
+  if (editing) await api('PUT', '/trackers/' + editing.id, body); else await api('POST', '/trackers', body);
+  closeTracker(); toast('success', editing ? 'Tracker modifié' : 'Tracker ajouté', 'Lancez un cycle pour le tester en conditions réelles.'); await load(false);
+});
 
-function renderOptions() {
-  const box = $('#s-options'); box.replaceChildren(h('h2', {}, 'Options'));
-  const c = h('input', { type: 'checkbox', checked: S.settings.streamInfo, onchange: act(async () => { await api('PUT', '/settings', { streamInfo: c.checked }); toast('Enregistré — réinstallez l\'addon dans Stremio pour appliquer'); }) });
-  box.append(h('label', { class: 'chk' }, c, 'Afficher une ligne « 🆕 Sortie récente + date » dans la liste des flux des titres du catalogue'),
-    h('p', { class: 'mut' }, 'C\'est une ligne d\'information, pas un flux lisible. Stremio relit le manifest à l\'installation : après changement, désinstallez puis réinstallez l\'addon.'));
+/* ---------- Catalogues ---------- */
+let CAT = { lang: 'all', type: 'all', q: '', items: [] };
+async function loadCatalog() {
+  if (!S) return;
+  $('#catLang').replaceChildren(...Object.keys(S.langs).map(l => h('button', { class: l === CAT.lang ? 'active' : '', onclick: () => { CAT.lang = l; loadCatalog(); } }, S.langs[l])));
+  try { CAT.items = await api('GET', '/catalog/' + CAT.lang); } catch (e) { toast('error', 'Erreur', e.message); return; }
+  renderCatalog();
 }
-
-function renderPlan() {
-  const box = $('#s-plan'); box.replaceChildren(h('h2', {}, 'Mise à jour automatique'));
-  box.append(h('p', {}, 'Vercel n\'a pas de processus permanent : les cycles sont déclenchés par une requête sur cette URL (remplacez SECRET par la variable CRON_SECRET) :'),
-    h('code', {}, location.origin + '/cron?key=SECRET'),
-    h('p', { class: 'mut' }, 'Plan Hobby : le cron intégré de Vercel ne tourne qu\'une fois par jour. Pour un cycle toutes les 30 min, programmez cette URL sur un service gratuit comme cron-job.org. Un cycle s\'arrête à ' + S.run.budgetS + ' s et reprend au suivant.'));
-}
-
-function renderInstall() {
-  const box = $('#s-install'); box.replaceChildren(h('h2', {}, 'Liens d\'installation (aucune clé dans l\'URL)'));
-  for (const l of Object.keys(S.langs)) {
-    const u = location.origin + '/' + l + '/manifest.json';
-    box.append(h('div', { style: 'margin-bottom:10px' }, h('b', {}, S.langs[l]), h('br'), h('code', {}, u), ' ',
-      h('a', { href: 'stremio://' + location.host + '/' + l + '/manifest.json' }, 'Installer dans Stremio')));
-  }
-}
-
 function renderCatalog() {
-  const box = $('#s-catalog'); box.replaceChildren(h('h2', {}, 'Contenu des catalogues'));
-  const sel = h('select', {}, Object.keys(S.langs).map(l => h('option', { value: l }, S.langs[l])));
-  const out = h('div');
-  const show = act(async () => {
-    const items = await api('GET', '/catalog/' + sel.value);
-    out.replaceChildren(items.length ? h('table', {}, h('tr', {}, ['Type', 'Titre', 'Détail', 'Vu le'].map(x => h('th', {}, x))),
-      items.map(i => h('tr', {}, h('td', {}, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série'), h('td', {}, i.name + (i.year ? ' (' + i.year + ')' : '')), h('td', { class: 'mut' }, i.desc), h('td', { class: 'mut' }, new Date(i.ts).toLocaleDateString('fr-FR')))))
-      : h('p', { class: 'mut' }, 'Catalogue vide pour le moment.'));
-  });
-  sel.onchange = show;
-  box.append(sel, h('div', { style: 'height:10px' }), out); show();
+  const q = CAT.q.trim().toLowerCase();
+  const list = CAT.items.filter(i => (CAT.type === 'all' || (CAT.type === 'anime' ? i.anime : CAT.type === 'movie' ? i.type === 'movie' : i.type === 'series' && !i.anime)) && (!q || i.name.toLowerCase().includes(q)));
+  $('#catCount').textContent = list.length + ' titre(s)';
+  $('#catBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Type', 'Titre', 'Détail', 'IMDb', 'Vu le'].map(x => h('th', {}, x)))),
+    h('tbody', {}, list.map(i => h('tr', {}, h('td', {}, h('span', { class: 'badge ' + (i.anime ? 'warning' : i.type === 'movie' ? 'primary' : 'info') }, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série')),
+      h('td', {}, h('b', {}, i.name), i.year ? h('small', {}, ' (' + i.year + ')') : ''), h('td', {}, h('small', {}, i.desc)),
+      h('td', {}, h('code', {}, i.id)), h('td', {}, h('small', {}, fullDate(i.ts))))))) : h('div', { class: 'empty' }, CAT.items.length ? 'Aucun résultat pour ce filtre.' : 'Catalogue vide pour le moment. Lancez un cycle depuis le tableau de bord.'));
 }
+$('#catType').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; CAT.type = b.dataset.t; document.querySelectorAll('#catType button').forEach(x => x.classList.toggle('active', x === b)); renderCatalog(); });
+$('#catSearch').addEventListener('input', e => { CAT.q = e.target.value; renderCatalog(); });
 
+/* ---------- Actions du tableau de bord ---------- */
+$('#runBtn').onclick = guard(async () => {
+  const b = $('#runBtn'); b.disabled = true; b.firstChild.classList.add('spin');
+  toast('info', 'Cycle lancé', 'Jusqu\'à ' + S.run.budgetS + ' s — ne fermez pas la page.');
+  try { const x = await api('POST', '/refresh'); toast(x.ok === false ? 'error' : 'success', x.skipped ? 'Cycle non lancé' : 'Cycle terminé', x.message); }
+  finally { b.firstChild.classList.remove('spin'); await load(false); }
+});
+$('#seenBtn').onclick = guard(async () => {
+  if (!(await confirmBox({ title: 'Retraiter les rejetés ?', message: 'Tous les torrents déjà examinés seront réexaminés au prochain cycle (utile après un changement de configuration). Les catalogues actuels sont conservés.', yes: 'Retraiter', danger: false }))) return;
+  await api('POST', '/reset', { what: 'seen' }); toast('success', 'Torrents remis en file'); await load(false);
+});
+$('#clearBtn').onclick = guard(async () => {
+  if (!(await confirmBox({ title: 'Vider les catalogues ?', message: 'Les 3 versions (Toutes, VF, VFF) sont vidées et tout sera réexaminé au prochain cycle.', yes: 'Vider' }))) return;
+  await api('POST', '/reset', { what: 'items' }); toast('success', 'Catalogues vidés'); await load(false);
+});
+
+/* ---------- Réglages ---------- */
+function renderSettings() {
+  $('#tmdbBadge').replaceChildren(h('span', { class: 'badge ' + (S.tmdb.set ? 'success' : 'danger') }, S.tmdb.set ? 'Clé enregistrée ' + S.tmdb.hint : 'Non configurée'));
+  $('#tmdbKey').placeholder = S.tmdb.set ? 'Clé enregistrée — saisir une nouvelle valeur pour la remplacer' : 'Clé API v3 ou jeton v4';
+  $('#tmdbHint').textContent = 'Clé v3 (32 caractères) ou jeton v4 (long, commence par « eyJ »). Les deux fonctionnent.';
+  $('#optStream').checked = S.settings.streamInfo;
+  $('#cronUrl').textContent = location.origin + '/cron?key=SECRET';
+  $('#cronHint').textContent = 'Plan Hobby : le cron intégré de Vercel ne passe qu\'une fois par jour (déjà configuré en secours). Pour un cycle toutes les 30 minutes, programmez cette URL sur un service gratuit comme cron-job.org. Un cycle s\'arrête à ' + S.run.budgetS + ' s et reprend au suivant.';
+  renderInstall();
+}
+function renderInstall() {
+  const box = $('#installBody');
+  if (box.dataset.ready) return;
+  box.dataset.ready = '1';
+  box.replaceChildren(...Object.keys(S.langs).map(l => {
+    const u = location.origin + '/' + l + '/manifest.json';
+    return h('div', { class: 'install-row' }, h('div', {}, h('div', { class: 't' }, S.langs[l]), h('code', {}, u)),
+      h('div', { class: 'row-actions' }, h('button', { class: 'btn btn-ghost btn-small', onclick: () => copy(u) }, icon('copy'), 'Copier'),
+        h('a', { class: 'btn btn-primary btn-small', href: 'stremio://' + location.host + '/' + l + '/manifest.json' }, icon('download'), 'Installer')));
+  }));
+}
+$('#tmdbSave').onclick = guard(async () => {
+  const k = $('#tmdbKey').value.trim(); if (!k) return toast('error', 'Clé manquante', 'Saisissez une clé TMDB.');
+  await api('PUT', '/tmdb', { key: k }); $('#tmdbKey').value = ''; toast('success', 'Clé TMDB enregistrée'); await load(false); renderSettings();
+});
+$('#tmdbTest').onclick = guard(async () => { const r = await api('POST', '/tmdb/test', { key: $('#tmdbKey').value }); toast(r.ok ? 'success' : 'error', r.ok ? 'TMDB' : 'Échec du test', r.message); });
+$('#optStream').onchange = guard(async () => { await api('PUT', '/settings', { streamInfo: $('#optStream').checked }); toast('success', 'Option enregistrée', 'Réinstallez l\'addon dans Stremio pour l\'appliquer.'); });
+$('#copyCron').onclick = () => copy($('#cronUrl').textContent);
+
+/* ---------- Démarrage ---------- */
+hydrateIcons();
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeTracker(); } });
 load(true);
-setInterval(() => { if (!$('#app').hidden && document.visibilityState === 'visible') load(false); }, 20000);
+setInterval(() => { if (!$('#app').hidden && document.visibilityState === 'visible' && !document.querySelector('.modal.show')) load(false); }, 20000);
 </script>
 </body>
 </html>
