@@ -173,6 +173,7 @@ code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-terti
 .toast-title{font-size:13px;font-weight:600}.toast-message{font-size:13px;color:var(--text-secondary);margin-top:2px;word-break:break-word}
 .toast.success{border-left:3px solid var(--accent-success)}.toast.success .toast-icon{color:var(--accent-success)}
 .toast.error{border-left:3px solid var(--accent-danger)}.toast.error .toast-icon{color:var(--accent-danger)}
+.toast.warning{border-left:3px solid var(--accent-warning)}.toast.warning .toast-icon{color:var(--accent-warning)}
 .toast.info{border-left:3px solid var(--accent-info)}.toast.info .toast-icon{color:var(--accent-info)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
 .modal.show{display:flex}
@@ -186,6 +187,20 @@ code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-terti
 .confirm-text{text-align:center}.confirm-text .modal-sub{margin-bottom:24px}
 .modal-actions.center{justify-content:center}
 
+.thumb{width:34px;height:50px;object-fit:cover;border-radius:5px;background:var(--bg-tertiary);display:block}
+.check{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+.check:last-child{border-bottom:none}
+.check .dotc{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--border-strong);color:transparent}
+.check .dotc svg{width:14px;height:14px}
+.check.done .dotc{background:var(--accent-success);border-color:var(--accent-success);color:#fff}
+.check .t{font-weight:500}.check .d{font-size:12px;color:var(--text-muted)}.check .go{margin-left:auto}
+select.form-input{width:auto;min-width:220px;cursor:pointer}
+details{margin-top:16px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px 16px;background:var(--bg-tertiary)}
+details summary{cursor:pointer;color:var(--text-secondary);font-size:13px;font-weight:500}
+details[open] summary{margin-bottom:12px}
+.opt-block{padding:18px 0;border-bottom:1px solid var(--border-subtle)}.opt-block:first-child{padding-top:0}.opt-block:last-child{border-bottom:none;padding-bottom:0}
+.opt-block .t{font-weight:500;margin-bottom:2px}.opt-block .d{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5}
+.mono{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);word-break:break-all}
 @media(max-width:768px){
   .header-top{padding:12px 16px}.nav-tabs{padding:0 8px}.nav-tab{padding:12px 14px}
   .app-main{padding:20px 16px 60px}.stat-value{font-size:24px}.header-btn span{display:none}.header-btn{padding:8px 10px}
@@ -225,6 +240,7 @@ code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-terti
       <button class="nav-tab active" data-page="dashboard"><span data-icon="dashboard"></span>Tableau de bord</button>
       <button class="nav-tab" data-page="trackers"><span data-icon="server"></span>Trackers</button>
       <button class="nav-tab" data-page="catalog"><span data-icon="film"></span>Catalogues</button>
+      <button class="nav-tab" data-page="log"><span data-icon="list"></span>Journal</button>
       <button class="nav-tab" data-page="settings"><span data-icon="settings"></span>Réglages</button>
     </nav>
   </header>
@@ -233,6 +249,10 @@ code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-terti
 
     <!-- Tableau de bord -->
     <div class="page active" id="page-dashboard">
+      <div class="section" id="setup" hidden>
+        <div class="section-header"><div class="section-title"><span data-icon="check"></span>Démarrage</div><span class="section-count" id="setupCount"></span></div>
+        <div class="section-body" id="setupBody"></div>
+      </div>
       <div class="stats-grid" id="stats"></div>
       <div class="section">
         <div class="section-header">
@@ -283,6 +303,24 @@ code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-terti
       </div>
     </div>
 
+    <!-- Journal -->
+    <div class="page" id="page-log">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><span data-icon="list"></span>Journal des derniers cycles<span class="section-count" id="logCount"></span></div>
+          <div class="section-buttons"><button class="btn btn-ghost btn-small" id="logClear"><span data-icon="trash"></span>Effacer</button></div>
+        </div>
+        <div class="filters">
+          <div class="seg" id="logKind">
+            <button data-k="all" class="active">Tout</button><button data-k="ok">Acceptés</button><button data-k="ko">Rejetés</button><button data-k="err">Erreurs</button>
+          </div>
+          <input class="form-input" id="logSearch" type="search" placeholder="Rechercher une release…">
+        </div>
+        <div class="section-body no-padding"><div class="table-container" id="logBody"></div></div>
+      </div>
+      <p class="hint">Pour comprendre pourquoi un titre n'apparaît pas : cherchez sa release ici. Les rejets sont notés pour « Toutes les versions » ; les acceptations et les erreurs pour les trois versions.</p>
+    </div>
+
     <!-- Réglages -->
     <div class="page" id="page-settings">
       <div class="section">
@@ -298,22 +336,42 @@ code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-terti
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="tune"></span>Options</div></div>
+        <div class="section-header"><div class="section-title"><span data-icon="tune"></span>Affichage dans Stremio</div></div>
         <div class="section-body">
-          <div class="setting-row">
-            <div><div class="t">Ligne d'info dans les flux</div>
-              <div class="d">Affiche « 🆕 Sortie récente + date » dans la liste des flux des titres du catalogue (ce n'est pas un flux lisible). Après changement, désinstallez puis réinstallez l'addon dans Stremio.</div></div>
-            <label class="switch"><input type="checkbox" id="optStream"><span></span></label>
+          <div class="opt-block">
+            <div class="t">Titre sous l'affiche</div>
+            <div class="d">Stremio n'affiche que l'affiche et le titre dans les catalogues : l'épisode et la date sont donc ajoutés au titre. Effet immédiat (quelques minutes de cache).</div>
+            <div class="seg" id="optTitle">
+              <button data-f="plain">Titre seul</button><button data-f="episode">Titre + épisode</button><button data-f="episode_date">Titre + épisode + date</button>
+            </div>
+            <div class="hint" id="titleExample"></div>
+          </div>
+          <div class="opt-block">
+            <div class="setting-row">
+              <div><div class="t">Ligne d'info dans les flux</div>
+                <div class="d" style="margin-bottom:0">Affiche « 🆕 Sortie récente » avec l'épisode, la date et la version en haut de la liste des flux d'un titre du catalogue (ce n'est pas un flux lisible). <b>Après changement, désinstallez puis réinstallez l'addon dans Stremio.</b></div></div>
+              <label class="switch"><input type="checkbox" id="optStream"><span></span></label>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Mise à jour automatique</div></div>
+        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Mise à jour automatique</div><span id="autoBadge"></span></div>
         <div class="section-body">
-          <p style="margin-bottom:12px">Vercel n'a pas de processus permanent : un cycle est déclenché par une requête sur cette URL (remplacez <code>SECRET</code> par votre <code>CRON_SECRET</code>) :</p>
-          <div class="copy-line"><code id="cronUrl"></code><button class="btn btn-ghost btn-small" id="copyCron"><span data-icon="copy"></span>Copier</button></div>
-          <p class="hint" id="cronHint"></p>
+          <div class="opt-block">
+            <div class="t">Fréquence</div>
+            <div class="d">Quand vous ouvrez Stremio et que les catalogues n'ont pas été mis à jour depuis ce délai, l'addon cherche les nouveautés tout seul en arrière-plan. Vous les voyez à l'ouverture suivante. <b>Rien d'autre à configurer.</b></div>
+            <select class="form-input" id="optAuto">
+              <option value="0">Désactivée</option><option value="15">Toutes les 15 minutes</option><option value="30">Toutes les 30 minutes (recommandé)</option>
+              <option value="60">Toutes les heures</option><option value="120">Toutes les 2 heures</option><option value="360">Toutes les 6 heures</option>
+            </select>
+          </div>
+          <details>
+            <summary>Avancé : déclencheur externe (facultatif)</summary>
+            <p class="hint" style="margin-top:0">Utile seulement si vous voulez des mises à jour même quand vous n'ouvrez pas Stremio. Programmez cette URL sur un service gratuit comme cron-job.org (remplacez <code>SECRET</code> par votre variable <code>CRON_SECRET</code> de Vercel). Un cycle s'arrête à <span id="budgetS">50</span> s et reprend au suivant.</p>
+            <div class="copy-line" style="margin-top:10px"><code id="cronUrl"></code><button class="btn btn-ghost btn-small" id="copyCron"><span data-icon="copy"></span>Copier</button></div>
+          </details>
         </div>
       </div>
 
@@ -380,6 +438,7 @@ const ICONS = {
   download: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
   layers: 'M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z',
   key: 'M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
+  list: 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
   tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
 };
 const svg = n => `<svg viewBox="0 0 24 24" width="18" height="18"><path d="${ICONS[n]}"/></svg>`;
@@ -400,10 +459,10 @@ function h(tag, props, ...kids) {
 
 /* ---------- Toasts ---------- */
 function toast(type, title, msg) {
-  const t = h('div', { class: 'toast ' + type }, h('span', { class: 'toast-icon' }, icon(type === 'error' ? 'warning' : type === 'info' ? 'info' : 'check')),
+  const t = h('div', { class: 'toast ' + type }, h('span', { class: 'toast-icon' }, icon(type === 'error' || type === 'warning' ? 'warning' : type === 'info' ? 'info' : 'check')),
     h('div', {}, h('div', { class: 'toast-title' }, title), msg ? h('div', { class: 'toast-message' }, msg) : ''));
   $('#toasts').append(t);
-  setTimeout(() => { t.classList.add('hiding'); setTimeout(() => t.remove(), 300); }, type === 'error' ? 6000 : 3500);
+  setTimeout(() => { t.classList.add('hiding'); setTimeout(() => t.remove(), 300); }, type === 'error' || type === 'warning' ? 7000 : 3500);
 }
 
 /* ---------- Confirmation ---------- */
@@ -446,11 +505,12 @@ const fullDate = t => new Date(t).toLocaleDateString('fr-FR');
 /* ---------- Navigation ---------- */
 let S = null, page = (location.hash || '#dashboard').slice(1);
 function goto(p) {
-  if (!['dashboard', 'trackers', 'catalog', 'settings'].includes(p)) p = 'dashboard';
+  if (!['dashboard', 'trackers', 'catalog', 'log', 'settings'].includes(p)) p = 'dashboard';
   page = p; history.replaceState(null, '', '#' + p);
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.page === p));
   document.querySelectorAll('.page').forEach(x => x.classList.toggle('active', x.id === 'page-' + p));
   if (p === 'catalog') loadCatalog();
+  if (p === 'log') loadLog();
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('.nav-tab'); if (b) goto(b.dataset.page); });
 
@@ -500,6 +560,18 @@ function renderDashboard() {
     return h('tr', {}, h('td', {}, h('b', {}, S.langs[l])), h('td', { class: 'num' }, k.movies), h('td', { class: 'num' }, k.series), h('td', { class: 'num' }, k.anime),
       n(st && st.neuf), n(st && st.ok), n(st && st.ko), h('td', { class: 'num' }, st ? (st.err ? h('span', { class: 'badge danger' }, st.err) : 0) : '—'));
   }));
+  const total = (S.counts.all.movies || 0) + (S.counts.all.series || 0) + (S.counts.all.anime || 0);
+  const steps = [
+    [S.tmdb.set, 'Clé TMDB enregistrée', 'Onglet Réglages', 'settings'],
+    [act > 0, 'Au moins un tracker actif', 'Onglet Trackers', 'trackers'],
+    [!!r.last, 'Premier cycle terminé', 'Bouton « Lancer un cycle » ci-dessous', null],
+    [total > 0, 'Des titres dans le catalogue', 'Ils apparaissent après un cycle réussi', 'catalog'],
+  ];
+  const left = steps.filter(x => !x[0]).length;
+  $('#setup').hidden = !left;
+  $('#setupCount').textContent = (steps.length - left) + ' / ' + steps.length;
+  $('#setupBody').replaceChildren(...steps.map(([ok, t, d, go]) => h('div', { class: 'check' + (ok ? ' done' : '') }, h('span', { class: 'dotc' }, icon('check')),
+    h('div', {}, h('div', { class: 't' }, t), h('div', { class: 'd' }, d)), !ok && go ? h('button', { class: 'btn btn-ghost btn-small go', onclick: () => goto(go) }, 'Y aller') : '')));
   const al = [];
   if (!S.tmdb.set) al.push(['danger', 'Clé TMDB manquante', 'Ajoutez-la dans Réglages : sans elle, aucun cycle ne peut tourner.']);
   if (!S.trackers.length) al.push(['danger', 'Aucun tracker', 'Ajoutez votre premier tracker dans l\'onglet Trackers.']);
@@ -569,19 +641,49 @@ function renderCatalog() {
   const q = CAT.q.trim().toLowerCase();
   const list = CAT.items.filter(i => (CAT.type === 'all' || (CAT.type === 'anime' ? i.anime : CAT.type === 'movie' ? i.type === 'movie' : i.type === 'series' && !i.anime)) && (!q || i.name.toLowerCase().includes(q)));
   $('#catCount').textContent = list.length + ' titre(s)';
-  $('#catBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Type', 'Titre', 'Détail', 'IMDb', 'Vu le'].map(x => h('th', {}, x)))),
-    h('tbody', {}, list.map(i => h('tr', {}, h('td', {}, h('span', { class: 'badge ' + (i.anime ? 'warning' : i.type === 'movie' ? 'primary' : 'info') }, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série')),
+  $('#catBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['', 'Type', 'Titre', 'Détail', 'IMDb', 'Vu le', ''].map(x => h('th', {}, x)))),
+    h('tbody', {}, list.map(i => h('tr', {},
+      h('td', { style: 'width:52px' }, i.poster ? h('img', { class: 'thumb', src: i.poster, loading: 'lazy', alt: '' }) : ''),
+      h('td', {}, h('span', { class: 'badge ' + (i.anime ? 'warning' : i.type === 'movie' ? 'primary' : 'info') }, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série')),
       h('td', {}, h('b', {}, i.name), i.year ? h('small', {}, ' (' + i.year + ')') : ''), h('td', {}, h('small', {}, i.desc)),
-      h('td', {}, h('code', {}, i.id)), h('td', {}, h('small', {}, fullDate(i.ts))))))) : h('div', { class: 'empty' }, CAT.items.length ? 'Aucun résultat pour ce filtre.' : 'Catalogue vide pour le moment. Lancez un cycle depuis le tableau de bord.'));
+      h('td', {}, h('code', {}, i.id)), h('td', {}, h('small', {}, fullDate(i.ts))),
+      h('td', {}, h('div', { class: 'row-actions' }, h('button', { class: 'btn-icon danger', title: 'Retirer des catalogues', onclick: guard(async () => {
+        if (!(await confirmBox({ title: 'Retirer ce titre ?', message: '« ' + i.name + ' » sera retiré des 3 versions du catalogue. Il ne reviendra que si un nouveau torrent est validé.', yes: 'Retirer' }))) return;
+        await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadCatalog();
+      }) }, icon('trash')))))))) : h('div', { class: 'empty' }, CAT.items.length ? 'Aucun résultat pour ce filtre.' : 'Catalogue vide pour le moment. Lancez un cycle depuis le tableau de bord.'));
 }
 $('#catType').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; CAT.type = b.dataset.t; document.querySelectorAll('#catType button').forEach(x => x.classList.toggle('active', x === b)); renderCatalog(); });
 $('#catSearch').addEventListener('input', e => { CAT.q = e.target.value; renderCatalog(); });
+
+/* ---------- Journal ---------- */
+let LOG = { kind: 'all', q: '', items: [] };
+const LANG_SHORT = { all: 'Toutes', vf: 'VF', vff: 'VFF' };
+async function loadLog() {
+  try { LOG.items = await api('GET', '/log'); } catch (e) { toast('error', 'Erreur', e.message); return; }
+  renderLog();
+}
+function renderLog() {
+  const q = LOG.q.trim().toLowerCase();
+  const list = LOG.items.filter(x => (LOG.kind === 'all' || x.kind === LOG.kind) && (!q || x.title.toLowerCase().includes(q) || String(x.reason).toLowerCase().includes(q)));
+  $('#logCount').textContent = list.length + ' entrée(s)';
+  const tone = { ok: ['success', 'Accepté'], ko: ['muted', 'Rejeté'], err: ['danger', 'Erreur'] };
+  $('#logBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Résultat', 'Version', 'Release', 'Raison / détail', 'Tracker'].map(x => h('th', {}, x)))),
+    h('tbody', {}, list.map(x => h('tr', {}, h('td', {}, h('small', {}, ago(x.t))), h('td', {}, h('span', { class: 'badge ' + tone[x.kind][0] }, tone[x.kind][1])),
+      h('td', {}, h('small', {}, LANG_SHORT[x.lang] || x.lang)), h('td', { class: 'mono' }, x.title), h('td', {}, x.reason), h('td', {}, h('small', {}, x.tr || '')))))) :
+    h('div', { class: 'empty' }, LOG.items.length ? 'Aucune entrée pour ce filtre.' : 'Le journal est vide. Il se remplit à chaque cycle.'));
+}
+$('#logKind').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; LOG.kind = b.dataset.k; document.querySelectorAll('#logKind button').forEach(x => x.classList.toggle('active', x === b)); renderLog(); });
+$('#logSearch').addEventListener('input', e => { LOG.q = e.target.value; renderLog(); });
+$('#logClear').onclick = guard(async () => {
+  if (!(await confirmBox({ title: 'Effacer le journal ?', message: 'Seul l\'historique affiché ici est supprimé.', yes: 'Effacer' }))) return;
+  await api('DELETE', '/log'); toast('success', 'Journal effacé'); await loadLog();
+});
 
 /* ---------- Actions du tableau de bord ---------- */
 $('#runBtn').onclick = guard(async () => {
   const b = $('#runBtn'); b.disabled = true; b.firstChild.classList.add('spin');
   toast('info', 'Cycle lancé', 'Jusqu\'à ' + S.run.budgetS + ' s — ne fermez pas la page.');
-  try { const x = await api('POST', '/refresh'); toast(x.ok === false ? 'error' : 'success', x.skipped ? 'Cycle non lancé' : 'Cycle terminé', x.message); }
+  try { const x = await api('POST', '/refresh'); toast(x.skipped ? 'warning' : x.ok === false ? 'error' : 'success', x.skipped ? 'Cycle non lancé' : x.ok === false ? 'Erreur' : 'Cycle terminé', x.message); }
   finally { b.firstChild.classList.remove('spin'); await load(false); }
 });
 $('#seenBtn').onclick = guard(async () => {
@@ -594,13 +696,22 @@ $('#clearBtn').onclick = guard(async () => {
 });
 
 /* ---------- Réglages ---------- */
+function titleExample(f) {
+  const base = 'Antigang';
+  return 'Exemple : ' + (f === 'plain' ? base : f === 'episode' ? base + ' · S02E15' : base + ' · S02E15 · 30/09');
+}
 function renderSettings() {
   $('#tmdbBadge').replaceChildren(h('span', { class: 'badge ' + (S.tmdb.set ? 'success' : 'danger') }, S.tmdb.set ? 'Clé enregistrée ' + S.tmdb.hint : 'Non configurée'));
   $('#tmdbKey').placeholder = S.tmdb.set ? 'Clé enregistrée — saisir une nouvelle valeur pour la remplacer' : 'Clé API v3 ou jeton v4';
   $('#tmdbHint').textContent = 'Clé v3 (32 caractères) ou jeton v4 (long, commence par « eyJ »). Les deux fonctionnent.';
   $('#optStream').checked = S.settings.streamInfo;
+  const f = S.settings.titleFormat;
+  document.querySelectorAll('#optTitle button').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  $('#titleExample').textContent = titleExample(f);
+  $('#optAuto').value = String(S.settings.autoRefreshMin);
+  $('#autoBadge').replaceChildren(h('span', { class: 'badge ' + (S.settings.autoRefreshMin ? 'success' : 'muted') }, S.settings.autoRefreshMin ? 'Active' : 'Désactivée'));
   $('#cronUrl').textContent = location.origin + '/cron?key=SECRET';
-  $('#cronHint').textContent = 'Plan Hobby : le cron intégré de Vercel ne passe qu\'une fois par jour (déjà configuré en secours). Pour un cycle toutes les 30 minutes, programmez cette URL sur un service gratuit comme cron-job.org. Un cycle s\'arrête à ' + S.run.budgetS + ' s et reprend au suivant.';
+  $('#budgetS').textContent = S.run.budgetS;
   renderInstall();
 }
 function renderInstall() {
@@ -619,6 +730,17 @@ $('#tmdbSave').onclick = guard(async () => {
   await api('PUT', '/tmdb', { key: k }); $('#tmdbKey').value = ''; toast('success', 'Clé TMDB enregistrée'); await load(false); renderSettings();
 });
 $('#tmdbTest').onclick = guard(async () => { const r = await api('POST', '/tmdb/test', { key: $('#tmdbKey').value }); toast(r.ok ? 'success' : 'error', r.ok ? 'TMDB' : 'Échec du test', r.message); });
+$('#optTitle').addEventListener('click', guard(async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  await api('PUT', '/settings', { titleFormat: b.dataset.f }); S.settings.titleFormat = b.dataset.f;
+  document.querySelectorAll('#optTitle button').forEach(x => x.classList.toggle('active', x === b)); $('#titleExample').textContent = titleExample(b.dataset.f);
+  toast('success', 'Affichage enregistré', 'Visible dans Stremio d\'ici quelques minutes.');
+}));
+$('#optAuto').onchange = guard(async () => {
+  await api('PUT', '/settings', { autoRefreshMin: +$('#optAuto').value }); S.settings.autoRefreshMin = +$('#optAuto').value;
+  $('#autoBadge').replaceChildren(h('span', { class: 'badge ' + (S.settings.autoRefreshMin ? 'success' : 'muted') }, S.settings.autoRefreshMin ? 'Active' : 'Désactivée'));
+  toast('success', 'Fréquence enregistrée');
+});
 $('#optStream').onchange = guard(async () => { await api('PUT', '/settings', { streamInfo: $('#optStream').checked }); toast('success', 'Option enregistrée', 'Réinstallez l\'addon dans Stremio pour l\'appliquer.'); });
 $('#copyCron').onclick = () => copy($('#cronUrl').textContent);
 

@@ -13,13 +13,17 @@
  * Sur Vercel il n'y a pas de processus permanent : la mise à jour est un « cycle » déclenché par
  * GET /cron (Vercel Cron et/ou un service externe), qui s'arrête à temps et reprend au cycle suivant.
  *
- * Variables : ADMIN_PASSWORD (dashboard)  CRON_SECRET (protège /cron)  + Upstash (KV_REST_API_URL/TOKEN)
+ * Mise à jour : automatique (déclenchée quand Stremio charge un catalogue et que les données ont plus de N min,
+ * réglable dans le dashboard), plus /cron en option.
+ * Variables : ADMIN_PASSWORD (dashboard)  CRON_SECRET (protège /cron, optionnel)  + Upstash (KV_REST_API_URL/TOKEN)
  * Optionnelles : CYCLE_BUDGET_S (50)  TRACKER_DELAY_MS (1500)  DVDS (0 = désactiver)  DVDS_URL  PORT (local)
  */
 const http = require('http');
 const crypto = require('crypto');
 const { addonBuilder } = require('stremio-addon-sdk');
 const kv = require('./lib/storage');
+let waitUntil = null; // Vercel : permet de terminer un cycle après avoir répondu à Stremio
+try { waitUntil = require('@vercel/functions').waitUntil; } catch { /* hors Vercel */ }
 
 /* ------------------------------------------------------------------ constantes */
 const HOUR = 3600e3, DAY = 24 * HOUR;
@@ -39,7 +43,7 @@ const MOVIE_CATS = '2000,2010,2030,2060,2070,2080,2090';
 const SERIES_CATS = '5000,5070,5080';
 const LANGS = ['all', 'vf', 'vff'];
 const LANG_NAMES = { all: 'Toutes les versions', vf: 'VF (VFQ incluse)', vff: 'VFF / VF2 uniquement' };
-const KEY = { config: 'sr:config', run: 'sr:run', lock: 'sr:lock', dvds: 'sr:dvds', items: l => 'sr:items:' + l, seen: l => 'sr:seen:' + l };
+const KEY = { config: 'sr:config', run: 'sr:run', lock: 'sr:lock', dvds: 'sr:dvds', log: 'sr:log', auto: 'sr:auto', items: l => 'sr:items:' + l, seen: l => 'sr:seen:' + l };
 
 const log = (...a) => console.log(...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -51,7 +55,11 @@ let cfgCache = null, cfgAt = 0;
 async function getConfig(force) {
   if (!force && cfgCache && Date.now() - cfgAt < 30000) return cfgCache;
   const c = (await kv.get(KEY.config)) || {};
-  cfgCache = { tmdbKey: c.tmdbKey || '', streamInfo: !!c.streamInfo, trackers: Array.isArray(c.trackers) ? c.trackers : [] };
+  cfgCache = {
+    tmdbKey: c.tmdbKey || '', streamInfo: !!c.streamInfo, trackers: Array.isArray(c.trackers) ? c.trackers : [],
+    autoRefreshMin: c.autoRefreshMin === undefined ? 30 : Math.max(0, +c.autoRefreshMin || 0), // 0 = désactivé
+    titleFormat: ['plain', 'episode', 'episode_date'].includes(c.titleFormat) ? c.titleFormat : 'episode',
+  };
   cfgAt = Date.now();
   return cfgCache;
 }
@@ -368,7 +376,8 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
   try {
     const cfg = await getConfig(true);
     const trackers = cfg.trackers.filter(t => t.enabled);
-    if (!cfg.tmdbKey || !trackers.length) return { skipped: true, message: 'Ajoutez au moins un tracker actif et la clé TMDB dans /admin' };
+    if (!cfg.tmdbKey) return { skipped: true, message: 'Clé TMDB manquante : ajoutez-la dans l\'onglet Réglages.' };
+    if (!trackers.length) return { skipped: true, message: 'Aucun tracker actif : ajoutez-en un dans l\'onglet Trackers.' };
     const run = (await kv.get(KEY.run)) || {};
     run.trackerStatus = {};
     const list = [];
@@ -390,6 +399,7 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
     const stats = Object.fromEntries(LANGS.map(l => [l, { neuf: 0, ok: 0, ko: 0, err: 0 }]));
     const envs = Object.fromEntries(LANGS.map(l => [l, { l, m: cfg.tmdbKey, trackers }]));
     let postponed = 0;
+    const journal = []; // décisions de ce cycle (affichées dans l'onglet Journal)
     await pool(3, todo, async it => {
       if (Date.now() > deadline) { postponed++; return; } // plus le temps : reporté au cycle suivant
       const rel = parseRelease(it.title);
@@ -400,9 +410,9 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
         try {
           const r = it.kind === 'series' ? await evalSeries(envs[lang], it, rel) : await evalMovie(envs[lang], it, rel);
           st.seen[sk] = Math.floor(Date.now() / 60000); // traité : ne sera pas retraité
-          if (r.entry) { addEntry(st, r.entry); stats[lang].ok++; log(`[${lang}] + ${r.entry.name} (${r.entry.desc})`); }
-          else { stats[lang].ko++; if (process.env.DEBUG) log(`[${lang}] - ${it.title} : ${r.reason}`); }
-        } catch (e) { stats[lang].err++; log(`[${lang}] erreur transitoire, sera retenté : ${it.title} : ${e.message}`); }
+          if (r.entry) { addEntry(st, r.entry); stats[lang].ok++; journal.push({ t: Date.now(), lang, title: it.title, kind: 'ok', reason: r.entry.name + ' — ' + r.entry.desc, tr: it.tr.name }); log(`[${lang}] + ${r.entry.name} (${r.entry.desc})`); }
+          else { stats[lang].ko++; if (lang === 'all') journal.push({ t: Date.now(), lang, title: it.title, kind: 'ko', reason: r.reason, tr: it.tr.name }); if (process.env.DEBUG) log(`[${lang}] - ${it.title} : ${r.reason}`); }
+        } catch (e) { stats[lang].err++; journal.push({ t: Date.now(), lang, title: it.title, kind: 'err', reason: e.message, tr: it.tr.name }); log(`[${lang}] erreur transitoire, sera retenté : ${it.title} : ${e.message}`); }
       }
     });
     const now = Date.now();
@@ -413,6 +423,7 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
       await kv.set(KEY.items(l), st.items);
       await kv.set(KEY.seen(l), st.seen);
     }
+    if (journal.length) { journal.sort((a, b) => b.t - a.t); await kv.set(KEY.log, journal.concat((await kv.get(KEY.log)) || []).slice(0, 400)); }
     Object.assign(run, { last: Date.now(), ms: Date.now() - t0, stats, postponed, dvds: dvdsCount });
     await kv.set(KEY.run, run);
     const msg = LANGS.map(l => `${l} +${stats[l].ok}`).join('  ') + (postponed ? `  (${postponed} torrent(s) reporté(s) au prochain cycle)` : '');
@@ -445,12 +456,21 @@ function buildManifest(lang, streamInfo) {
   if (streamInfo) b.defineStreamHandler(async () => ({ streams: [] }));
   return b.getInterface().manifest || m;
 }
+const shortDate = t => new Date(t).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit' });
+function displayName(x, format) { // titre affiché sous l'affiche dans Stremio
+  if (format === 'plain') return x.name;
+  const label = x.type === 'series' ? String(x.desc || '').split(' · ')[0] : '';
+  const date = format === 'episode_date' && x.date ? shortDate(x.date) : '';
+  const extra = [label, date].filter(Boolean).join(' · ');
+  return extra ? x.name + ' · ' + extra : x.name;
+}
 async function catalog(lang, id, skip) {
+  const format = (await getConfig()).titleFormat;
   const items = (await kv.get(KEY.items(lang))) || [];
   const list = items.filter(x => id === 'sr-films' ? x.type === 'movie'
     : id === 'sr-animes' ? x.type === 'series' && x.anime : x.type === 'series' && !x.anime);
   return list.slice(skip, skip + PAGE).map(x => ({
-    id: x.id, type: x.type, name: x.name, poster: x.poster, releaseInfo: x.year || undefined, description: x.desc,
+    id: x.id, type: x.type, name: displayName(x, format), poster: x.poster, releaseInfo: x.year || undefined, description: x.desc,
   }));
 }
 async function streamsFor(lang, type, id) { // ligne d'information (option du dashboard) : ce n'est pas un flux lisible
@@ -462,6 +482,17 @@ async function streamsFor(lang, type, id) { // ligne d'information (option du da
     if (en.episode != null && e != null && +e !== en.episode) return [];
   }
   return [{ name: '🆕 Sortie récente', description: en.desc, externalUrl: `stremio:///detail/${type}/${imdb}` }];
+}
+
+// Mise à jour automatique : quand Stremio charge un catalogue et que le dernier essai date de plus de N minutes
+async function maybeAutoRefresh() {
+  try {
+    const cfg = await getConfig();
+    if (!cfg.autoRefreshMin || !cfg.tmdbKey || !cfg.trackers.some(t => t.enabled)) return;
+    if (!(await kv.setNx(KEY.auto, Date.now(), cfg.autoRefreshMin * 60))) return; // déjà tenté récemment
+    const p = cycle().catch(e => log('auto :', e.message));
+    if (waitUntil) waitUntil(p);
+  } catch (e) { log('auto :', e.message); }
 }
 
 /* ------------------------------------------------------------------ fonctions exposées au dashboard */
@@ -485,7 +516,7 @@ const core = {
       langs: LANG_NAMES,
       trackers: cfg.trackers.map(t => ({ id: t.id, name: t.name, url: t.url, keyHint: mask(t.apikey), enabled: t.enabled, status: (run.trackerStatus || {})[t.id] || null })),
       tmdb: { set: !!cfg.tmdbKey, hint: mask(cfg.tmdbKey) },
-      settings: { streamInfo: cfg.streamInfo },
+      settings: { streamInfo: cfg.streamInfo, autoRefreshMin: cfg.autoRefreshMin, titleFormat: cfg.titleFormat },
       run: { busy: !!(await kv.get(KEY.lock)), last: run.last || 0, ms: run.ms || 0, stats: run.stats || {}, postponed: run.postponed || 0, budgetS: CYCLE_BUDGET_MS / 1000 },
       counts, dvds: run.dvds || 0, dvdsOn: DVDS_ON,
     };
@@ -515,7 +546,23 @@ const core = {
     await saveConfig(c);
   },
   async setTmdb(key) { const c = await getConfig(true); c.tmdbKey = String(key || '').trim(); await saveConfig(c); },
-  async setSettings(o) { const c = await getConfig(true); if ('streamInfo' in o) c.streamInfo = !!o.streamInfo; await saveConfig(c); },
+  async setSettings(o) {
+    const c = await getConfig(true);
+    if ('streamInfo' in o) c.streamInfo = !!o.streamInfo;
+    if ('autoRefreshMin' in o) { const n = +o.autoRefreshMin; if (![0, 15, 30, 60, 120, 360].includes(n)) throw new Error('Valeur invalide'); c.autoRefreshMin = n; await kv.del(KEY.auto); }
+    if ('titleFormat' in o) { if (!['plain', 'episode', 'episode_date'].includes(o.titleFormat)) throw new Error('Format invalide'); c.titleFormat = o.titleFormat; }
+    await saveConfig(c);
+  },
+  async removeItem(id, type) { // retire un titre de tous les catalogues
+    let n = 0;
+    for (const l of LANGS) {
+      const items = (await kv.get(KEY.items(l))) || [], keep = items.filter(x => !(x.id === id && x.type === type));
+      if (keep.length !== items.length) { n++; await kv.set(KEY.items(l), keep); }
+    }
+    if (!n) throw new Error('Titre introuvable');
+  },
+  async getLog() { return (await kv.get(KEY.log)) || []; },
+  async clearLog() { await kv.del(KEY.log); },
   async testTracker(id) {
     const t = (await getConfig(true)).trackers.find(x => x.id === id);
     if (!t) throw new Error('Tracker introuvable');
@@ -540,7 +587,7 @@ const core = {
   },
   async catalog(lang) {
     if (!LANGS.includes(lang)) throw new Error('Langue inconnue');
-    return ((await kv.get(KEY.items(lang))) || []).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, year: x.year, desc: x.desc, ts: x.ts }));
+    return ((await kv.get(KEY.items(lang))) || []).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, year: x.year, desc: x.desc, ts: x.ts, poster: x.poster }));
   },
 };
 
@@ -576,6 +623,7 @@ async function handler(req, res) {
     if (rest.length) rest[rest.length - 1] = rest[rest.length - 1].replace(/\.json$/, '');
     if (rest[0] === 'catalog' && rest.length >= 3) {
       const skip = rest.length > 3 ? parseInt(new URLSearchParams(rest[3]).get('skip'), 10) || 0 : 0;
+      await maybeAutoRefresh();
       return json(res, { metas: await catalog(lang, rest[2], skip) }, { 'Cache-Control': EDGE });
     }
     if (rest[0] === 'stream' && rest.length >= 3) {

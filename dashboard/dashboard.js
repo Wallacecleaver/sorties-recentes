@@ -82,6 +82,9 @@ module.exports = function createDashboard(core, { password }) {
       if (k === 'refresh' && m === 'POST') return json(res, await core.refreshNow());
       if (k === 'reset' && m === 'POST') { await core.reset((await readBody(req)).what); return json(res, { ok: true }); }
       if (k === 'catalog' && m === 'GET') return json(res, await core.catalog(a[1]));
+      if (k === 'item' && m === 'DELETE') { await core.removeItem(decodeURIComponent(a[1]), a[2]); return json(res, { ok: true }); }
+      if (k === 'log' && m === 'GET') return json(res, await core.getLog());
+      if (k === 'log' && m === 'DELETE') { await core.clearLog(); return json(res, { ok: true }); }
       return json(res, { error: 'Introuvable' }, 404);
     } catch (e) {
       return json(res, { error: e.message }, 400);

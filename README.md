@@ -4,13 +4,16 @@ Catalogues « Films récents », « Séries récentes », « Animés récents »
 sorties en torrent (API Torznab), validées par les dates officielles TMDB. Aucun flux fourni.
 
 ## Déploiement Vercel
-1. Poussez ce dossier sur GitHub puis importez le dépôt dans Vercel (ou `vercel` en ligne de commande).
+1. Importez ce dépôt dans Vercel.
 2. Projet > Storage > ajoutez **Upstash Redis** (Marketplace) : `KV_REST_API_URL` et `KV_REST_API_TOKEN` sont ajoutées seules.
-3. Settings > Environment Variables : `ADMIN_PASSWORD` et `CRON_SECRET`, puis redéployez.
-4. Ouvrez `https://votre-projet.vercel.app/admin` : ajoutez vos trackers (URL Torznab + clé) et la clé TMDB.
-5. Programmez `https://votre-projet.vercel.app/cron?key=VOTRE_CRON_SECRET` toutes les 30 min sur cron-job.org
-   (le cron Vercel du plan Hobby ne passe qu'une fois par jour ; il est déjà configuré en secours).
-6. Installez depuis `https://votre-projet.vercel.app/configure`.
+3. Settings > Environment Variables : `ADMIN_PASSWORD` (obligatoire), `CRON_SECRET` (optionnel), puis redéployez.
+4. Ouvrez `/admin` : ajoutez la clé TMDB (Réglages) et vos trackers (Trackers), puis « Lancer un cycle ».
+5. Installez depuis `/configure`.
+
+## Mise à jour automatique
+Rien à programmer : quand Stremio charge un catalogue et que les données ont plus de N minutes
+(réglable dans Réglages, 30 min par défaut), l'addon cherche les nouveautés en arrière-plan.
+`/cron?key=CRON_SECRET` reste disponible pour un déclencheur externe (facultatif).
 
 ## En local
-`npm install` puis `ADMIN_PASSWORD=xxx node index.js` (données dans ./data/kv, cycle toutes les 30 min).
+`npm install` puis `ADMIN_PASSWORD=xxx node index.js` (données dans ./data/kv).

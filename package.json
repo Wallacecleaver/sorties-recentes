@@ -1,6 +1,6 @@
 {
   "name": "sorties-recentes",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "description": "Addon Stremio : catalogues des sorties récentes (Torznab + TMDB), dashboard admin, hébergeable sur Vercel",
   "main": "index.js",
@@ -11,7 +11,8 @@
     "node": ">=18"
   },
   "dependencies": {
-    "stremio-addon-sdk": "^1.6.10"
+    "stremio-addon-sdk": "^1.6.10",
+    "@vercel/functions": "^3.0.0"
   },
   "directories": {
     "lib": "lib"
