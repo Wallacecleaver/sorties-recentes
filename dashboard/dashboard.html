@@ -19,8 +19,7 @@
   --accent-danger:#ef4444;--accent-danger-subtle:rgba(239,68,68,.1);
   --accent-info:#3b82f6;--accent-info-subtle:rgba(59,130,246,.1);
   --radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:18px;
-  --shadow-lg:0 8px 32px rgba(0,0,0,.5);
-  --transition-fast:150ms ease;
+  --shadow-lg:0 8px 32px rgba(0,0,0,.5);--transition-fast:150ms ease;
   --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --font-mono:'JetBrains Mono','Fira Code',Consolas,monospace;
 }
@@ -33,10 +32,8 @@ svg{fill:currentColor}
 [hidden]{display:none!important}
 
 /* ---------- Login ---------- */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
-  background:radial-gradient(800px 400px at 50% -10%,rgba(249,115,22,.12),transparent 70%)}
-.login-card{width:100%;max-width:380px;background:var(--bg-secondary);border:1px solid var(--border-default);
-  border-radius:var(--radius-xl);padding:32px;box-shadow:var(--shadow-lg)}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(800px 400px at 50% -10%,rgba(249,115,22,.12),transparent 70%)}
+.login-card{width:100%;max-width:380px;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-xl);padding:32px;box-shadow:var(--shadow-lg)}
 .login-card .logo{justify-content:center;margin-bottom:8px}
 .login-sub{text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:24px}
 .login-err{color:var(--accent-danger);font-size:13px;min-height:20px;margin-top:10px;text-align:center}
@@ -46,8 +43,7 @@ svg{fill:currentColor}
 .app-header{position:sticky;top:0;z-index:100;background:rgba(9,9,11,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-subtle)}
 .header-top{padding:16px 24px;display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto;width:100%;gap:12px}
 .logo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.logo-icon{width:36px;height:36px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;flex-shrink:0}
+.logo-icon{width:36px;height:36px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;flex-shrink:0}
 .logo-icon svg{width:20px;height:20px}
 .logo-text{font-size:18px;font-weight:700}
 .logo-badge{font-size:11px;font-weight:500;color:var(--accent-primary);background:var(--accent-primary-subtle);padding:2px 8px;border-radius:9999px}
@@ -56,16 +52,15 @@ svg{fill:currentColor}
 .pill.ok{color:var(--accent-success);background:var(--accent-success-subtle)}
 .pill.busy{color:var(--accent-primary);background:var(--accent-primary-subtle)}
 .pill.idle{color:var(--text-muted);background:rgba(255,255,255,.05)}
-.pill.ko{color:var(--accent-danger);background:var(--accent-danger-subtle)}
-.header-actions{display:flex;align-items:center;gap:12px}
-.header-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-tertiary);border:1px solid var(--border-default);
-  border-radius:var(--radius-md);color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all var(--transition-fast)}
+.header-actions{display:flex;align-items:center;gap:10px}
+.header-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all var(--transition-fast)}
 .header-btn svg{width:16px;height:16px}
 .header-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
+.header-btn.accent{background:var(--accent-primary-subtle);border-color:rgba(249,115,22,.3);color:var(--accent-primary)}
+.header-btn.accent:hover{background:rgba(249,115,22,.2)}
 .header-btn.danger:hover{background:var(--accent-danger-subtle);border-color:var(--accent-danger);color:var(--accent-danger)}
 .nav-tabs{display:flex;gap:4px;padding:0 24px;max-width:1400px;margin:0 auto;width:100%;overflow-x:auto}
-.nav-tab{display:flex;align-items:center;gap:8px;padding:12px 20px;background:transparent;border:none;border-bottom:2px solid transparent;
-  color:var(--text-muted);font-size:14px;font-weight:500;cursor:pointer;transition:all var(--transition-fast);margin-bottom:-1px;font-family:inherit;white-space:nowrap}
+.nav-tab{display:flex;align-items:center;gap:8px;padding:12px 20px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-size:14px;font-weight:500;cursor:pointer;transition:all var(--transition-fast);margin-bottom:-1px;font-family:inherit;white-space:nowrap}
 .nav-tab:hover{color:var(--text-secondary)}
 .nav-tab.active{color:var(--accent-primary);border-bottom-color:var(--accent-primary)}
 .nav-tab svg{width:18px;height:18px}
@@ -74,7 +69,7 @@ svg{fill:currentColor}
 .page{display:none}.page.active{display:block}
 
 /* ---------- Stats ---------- */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
 .stat-card{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:20px;transition:all var(--transition-fast)}
 .stat-card:hover{border-color:var(--border-default)}
 .stat-card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
@@ -86,7 +81,7 @@ svg{fill:currentColor}
 .stat-icon.danger{background:var(--accent-danger-subtle);color:var(--accent-danger)}
 .stat-icon.info{background:var(--accent-info-subtle);color:var(--accent-info)}
 .stat-label{font-size:13px;color:var(--text-muted);font-weight:500}
-.stat-value{font-size:28px;font-weight:700;line-height:1.2}
+.stat-value{font-size:26px;font-weight:700;line-height:1.2}
 .stat-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
 
 /* ---------- Sections ---------- */
@@ -94,11 +89,32 @@ svg{fill:currentColor}
 .section-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border-subtle);background:rgba(255,255,255,.01);flex-wrap:wrap;gap:12px}
 .section-title{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
 .section-title svg{width:18px;height:18px;color:var(--accent-primary)}
-.section-count{color:var(--text-muted);font-size:13px}
+.section-count{color:var(--text-muted);font-size:13px;font-weight:400;text-transform:none;letter-spacing:0}
 .section-buttons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .section-body{padding:24px}.section-body.no-padding{padding:0}
 .hint{font-size:13px;color:var(--text-muted);margin-top:10px;line-height:1.5}
 .empty{padding:40px 24px;text-align:center;color:var(--text-muted);font-size:14px}
+.cols{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start}
+@media(max-width:1000px){.cols{grid-template-columns:1fr}}
+
+/* ---------- Dernières sorties ---------- */
+.latest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;padding:20px 24px}
+.poster-card{background:var(--bg-tertiary);border:1px solid var(--border-subtle);border-radius:var(--radius-md);overflow:hidden;transition:all var(--transition-fast)}
+.poster-card:hover{border-color:var(--accent-primary);transform:translateY(-2px)}
+.poster-card img,.poster-card .noimg{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--bg-elevated)}
+.poster-card .noimg{display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+.poster-card .pc-body{padding:10px 12px}
+.poster-card .pc-name{font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.poster-card .pc-desc{font-size:11px;color:var(--text-muted);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ---------- Activité ---------- */
+.bars{display:flex;align-items:flex-end;gap:6px;height:130px;padding-top:8px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0}
+.bar .col{width:100%;background:var(--accent-primary);border-radius:4px 4px 0 0;min-height:3px;opacity:.85;transition:opacity var(--transition-fast)}
+.bar:hover .col{opacity:1}
+.bar .col.zero{background:var(--bg-hover);opacity:1}
+.bar .n{font-size:10px;color:var(--text-secondary);height:14px}
+.bar .l{font-size:9px;color:var(--text-muted);white-space:nowrap}
 
 /* ---------- Tables ---------- */
 .table-container{overflow-x:auto}
@@ -117,10 +133,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .badge.warning{background:var(--accent-warning-subtle);color:var(--accent-warning)}
 .badge.info{background:var(--accent-info-subtle);color:var(--accent-info)}
 .badge.muted{background:rgba(255,255,255,.06);color:var(--text-muted)}
+.mono{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);word-break:break-all}
+.thumb{width:34px;height:50px;object-fit:cover;border-radius:5px;background:var(--bg-tertiary);display:block}
 
 /* ---------- Buttons ---------- */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;font-weight:600;border:1px solid transparent;border-radius:var(--radius-md);
-  cursor:pointer;transition:all var(--transition-fast);font-family:inherit;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;font-weight:600;border:1px solid transparent;border-radius:var(--radius-md);cursor:pointer;transition:all var(--transition-fast);font-family:inherit;white-space:nowrap;text-decoration:none}
 .btn svg{width:16px;height:16px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-solid{background:var(--accent-primary);color:#fff}.btn-solid:hover:not(:disabled){background:var(--accent-primary-hover)}
@@ -128,8 +145,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .btn-ghost{background:var(--bg-tertiary);border-color:var(--border-default);color:var(--text-secondary)}.btn-ghost:hover:not(:disabled){background:var(--bg-hover);color:var(--text-primary)}
 .btn-danger{background:rgba(239,68,68,.15);color:#ef4444}.btn-danger:hover:not(:disabled){background:rgba(239,68,68,.25)}
 .btn-small{padding:6px 12px;font-size:12px}
-.btn-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;background:transparent;border:1px solid var(--border-default);
-  border-radius:var(--radius-sm);color:var(--text-muted);cursor:pointer;transition:all var(--transition-fast)}
+.btn-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;background:transparent;border:1px solid var(--border-default);border-radius:var(--radius-sm);color:var(--text-muted);cursor:pointer;transition:all var(--transition-fast)}
 .btn-icon svg{width:16px;height:16px}
 .btn-icon:hover{background:var(--bg-hover);border-color:var(--accent-primary);color:var(--accent-primary)}
 .btn-icon.danger:hover{border-color:var(--accent-danger);color:var(--accent-danger)}
@@ -143,6 +159,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .form-input{width:100%;padding:10px 12px;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:14px;font-family:inherit}
 .form-input:focus{outline:none;border-color:var(--accent-primary)}
 .form-input::placeholder{color:var(--text-muted)}
+select.form-input{width:auto;min-width:200px;cursor:pointer}
 .input-row{display:flex;gap:8px;flex-wrap:wrap}.input-row .form-input{flex:1;min-width:200px}
 .switch{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
 .switch input{opacity:0;width:0;height:0}
@@ -151,19 +168,44 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .switch input:checked+span{background:var(--accent-primary)}
 .switch input:checked+span::before{transform:translateX(18px)}
 .setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
-.setting-row .t{font-weight:500}.setting-row .d{font-size:13px;color:var(--text-muted);margin-top:2px}
-code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border-subtle);padding:3px 8px;border-radius:var(--radius-sm);word-break:break-all;color:var(--text-secondary)}
+.opt-block{padding:18px 0;border-bottom:1px solid var(--border-subtle)}.opt-block:first-child{padding-top:0}.opt-block:last-child{border-bottom:none;padding-bottom:0}
+.opt-block .t{font-weight:500;margin-bottom:2px}.opt-block .d{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5}
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.opt-grid .t{font-weight:500;margin-bottom:2px}.opt-grid .d{font-size:12px;color:var(--text-muted);margin-bottom:8px;line-height:1.4}
+code{font-family:var(--font-mono);font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border-subtle);padding:3px 8px;border-radius:var(--radius-sm);word-break:break-all;color:var(--text-secondary)}
 .copy-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+details{margin-top:16px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px 16px;background:var(--bg-tertiary)}
+details summary{cursor:pointer;color:var(--text-secondary);font-size:13px;font-weight:500}
+details[open] summary{margin-bottom:12px}
+.seg{display:inline-flex;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{background:transparent;border:none;color:var(--text-muted);padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit}
+.seg button:hover{color:var(--text-secondary)}
+.seg button.active{background:var(--accent-primary-subtle);color:var(--accent-primary)}
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border-subtle)}
+.filters .form-input{max-width:280px;padding:7px 12px;font-size:13px}
+.check{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+.check:last-child{border-bottom:none}
+.check .dotc{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--border-strong);color:transparent}
+.check .dotc svg{width:14px;height:14px}
+.check.done .dotc{background:var(--accent-success);border-color:var(--accent-success);color:#fff}
+.check .t{font-weight:500}.check .d{font-size:12px;color:var(--text-muted)}.check .go{margin-left:auto}
 .install-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--border-subtle)}
 .install-row:last-child{border-bottom:none;padding-bottom:0}.install-row:first-child{padding-top:0}
 .install-row .t{font-weight:600;margin-bottom:4px}
-.seg{display:inline-flex;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:3px;gap:2px;flex-wrap:wrap}
-.seg button{background:transparent;border:none;color:var(--text-muted);padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit}
-.seg button.active{background:var(--accent-primary-subtle);color:var(--accent-primary)}
-.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border-subtle)}
-.filters .form-input{max-width:260px;padding:7px 12px;font-size:13px}
 
-/* ---------- Toasts & modals ---------- */
+/* ---------- Diagnostic ---------- */
+.diag-card{border:1px solid var(--border-subtle);background:var(--bg-tertiary);border-radius:var(--radius-lg);padding:18px;margin-bottom:16px}
+.diag-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.diag-head .mono{flex:1;min-width:220px}
+.diag-info{font-size:13px;color:var(--text-secondary);margin-bottom:10px}
+.dates{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:14px}
+.dates div{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:6px 10px;font-size:12px}
+.dates b{display:block;color:var(--text-muted);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.verdict{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--border-subtle);font-size:13px}
+.verdict .badge{flex-shrink:0;min-width:78px;text-align:center}
+.verdict .lg{width:70px;flex-shrink:0;color:var(--text-muted);font-size:12px;padding-top:2px}
+
+/* ---------- Toasts & modales ---------- */
 .toast-container{position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:10px;max-width:400px;width:calc(100% - 40px)}
 .toast{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);animation:tin .3s ease}
 .toast.hiding{animation:tout .3s ease forwards}
@@ -181,30 +223,16 @@ code,.code{font-family:var(--font-mono);font-size:12px;background:var(--bg-terti
 .modal-title{font-size:18px;font-weight:600;margin-bottom:4px}
 .modal-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px}
 .modal-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:8px}
+.modal-actions.center{justify-content:center}
 .confirm-icon{width:48px;height:48px;background:rgba(239,68,68,.15);color:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
 .confirm-icon.warn{background:var(--accent-primary-subtle);color:var(--accent-primary)}
 .confirm-icon svg{width:24px;height:24px}
 .confirm-text{text-align:center}.confirm-text .modal-sub{margin-bottom:24px}
-.modal-actions.center{justify-content:center}
 
-.thumb{width:34px;height:50px;object-fit:cover;border-radius:5px;background:var(--bg-tertiary);display:block}
-.check{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
-.check:last-child{border-bottom:none}
-.check .dotc{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--border-strong);color:transparent}
-.check .dotc svg{width:14px;height:14px}
-.check.done .dotc{background:var(--accent-success);border-color:var(--accent-success);color:#fff}
-.check .t{font-weight:500}.check .d{font-size:12px;color:var(--text-muted)}.check .go{margin-left:auto}
-select.form-input{width:auto;min-width:220px;cursor:pointer}
-details{margin-top:16px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px 16px;background:var(--bg-tertiary)}
-details summary{cursor:pointer;color:var(--text-secondary);font-size:13px;font-weight:500}
-details[open] summary{margin-bottom:12px}
-.opt-block{padding:18px 0;border-bottom:1px solid var(--border-subtle)}.opt-block:first-child{padding-top:0}.opt-block:last-child{border-bottom:none;padding-bottom:0}
-.opt-block .t{font-weight:500;margin-bottom:2px}.opt-block .d{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5}
-.mono{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);word-break:break-all}
 @media(max-width:768px){
   .header-top{padding:12px 16px}.nav-tabs{padding:0 8px}.nav-tab{padding:12px 14px}
-  .app-main{padding:20px 16px 60px}.stat-value{font-size:24px}.header-btn span{display:none}.header-btn{padding:8px 10px}
-  .section-header{padding:16px}.section-body{padding:16px}.logo-badge{display:none}
+  .app-main{padding:20px 16px 60px}.stat-value{font-size:22px}.header-btn span{display:none}.header-btn{padding:8px 10px}
+  .section-header{padding:16px}.section-body{padding:16px}.logo-badge{display:none}.latest-grid{padding:16px;grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
 }
 </style>
 </head>
@@ -233,6 +261,7 @@ details[open] summary{margin-bottom:12px}
         <span class="pill idle" id="cyclePill"><span data-icon="clock"></span><span id="cycleText">--</span></span>
       </div>
       <div class="header-actions">
+        <button class="header-btn accent" id="installBtn"><span data-icon="download"></span><span>Installer</span></button>
         <button class="header-btn danger" id="logout"><span data-icon="logout"></span><span>Déconnexion</span></button>
       </div>
     </div>
@@ -241,6 +270,7 @@ details[open] summary{margin-bottom:12px}
       <button class="nav-tab" data-page="trackers"><span data-icon="server"></span>Trackers</button>
       <button class="nav-tab" data-page="catalog"><span data-icon="film"></span>Catalogues</button>
       <button class="nav-tab" data-page="log"><span data-icon="list"></span>Journal</button>
+      <button class="nav-tab" data-page="diag"><span data-icon="search"></span>Diagnostic</button>
       <button class="nav-tab" data-page="settings"><span data-icon="settings"></span>Réglages</button>
     </nav>
   </header>
@@ -254,20 +284,29 @@ details[open] summary{margin-bottom:12px}
         <div class="section-body" id="setupBody"></div>
       </div>
       <div class="stats-grid" id="stats"></div>
+
       <div class="section">
         <div class="section-header">
-          <div class="section-title"><span data-icon="layers"></span>Versions du catalogue</div>
-          <div class="section-buttons">
-            <button class="btn btn-solid" id="runBtn"><span data-icon="refresh"></span>Lancer un cycle</button>
-            <button class="btn btn-ghost" id="seenBtn"><span data-icon="replay"></span>Retraiter les rejetés</button>
-            <button class="btn btn-danger" id="clearBtn"><span data-icon="trash"></span>Vider les catalogues</button>
-          </div>
+          <div class="section-title"><span data-icon="star"></span>Dernières sorties validées</div>
+          <div class="section-buttons"><button class="btn btn-solid" id="runBtn"><span data-icon="refresh"></span>Lancer un cycle</button></div>
         </div>
-        <div class="section-body no-padding"><div class="table-container"><table>
-          <thead><tr><th>Version</th><th>Films</th><th>Séries</th><th>Animés</th><th>Nouveaux</th><th>Validés</th><th>Rejetés</th><th>Erreurs</th></tr></thead>
-          <tbody id="langRows"></tbody>
-        </table></div></div>
+        <div id="latest"></div>
       </div>
+
+      <div class="cols">
+        <div class="section">
+          <div class="section-header"><div class="section-title"><span data-icon="layers"></span>Versions du catalogue</div></div>
+          <div class="section-body no-padding"><div class="table-container"><table>
+            <thead><tr><th>Version</th><th>Films</th><th>Séries</th><th>Animés</th><th>Nouveaux</th><th>Validés</th><th>Rejetés</th><th>Erreurs</th></tr></thead>
+            <tbody id="langRows"></tbody>
+          </table></div></div>
+        </div>
+        <div class="section">
+          <div class="section-header"><div class="section-title"><span data-icon="tune"></span>Activité</div><span class="section-count">14 derniers jours</span></div>
+          <div class="section-body"><div class="bars" id="bars"></div><div class="hint">Titres validés par jour (version « Toutes »).</div></div>
+        </div>
+      </div>
+
       <div class="section" id="alerts" hidden>
         <div class="section-header"><div class="section-title"><span data-icon="warning"></span>À vérifier</div></div>
         <div class="section-body" id="alertsBody"></div>
@@ -308,30 +347,56 @@ details[open] summary{margin-bottom:12px}
       <div class="section">
         <div class="section-header">
           <div class="section-title"><span data-icon="list"></span>Journal des derniers cycles<span class="section-count" id="logCount"></span></div>
-          <div class="section-buttons"><button class="btn btn-ghost btn-small" id="logClear"><span data-icon="trash"></span>Effacer</button></div>
+          <div class="section-buttons">
+            <button class="btn btn-ghost btn-small" id="logReload"><span data-icon="refresh"></span>Actualiser</button>
+            <button class="btn btn-ghost btn-small" id="logClear"><span data-icon="trash"></span>Effacer</button>
+          </div>
         </div>
         <div class="filters">
           <div class="seg" id="logKind">
             <button data-k="all" class="active">Tout</button><button data-k="ok">Acceptés</button><button data-k="ko">Rejetés</button><button data-k="err">Erreurs</button>
           </div>
-          <input class="form-input" id="logSearch" type="search" placeholder="Rechercher une release…">
+          <input class="form-input" id="logSearch" type="search" placeholder="Rechercher une release ou une raison…">
         </div>
         <div class="section-body no-padding"><div class="table-container" id="logBody"></div></div>
       </div>
-      <p class="hint">Pour comprendre pourquoi un titre n'apparaît pas : cherchez sa release ici. Les rejets sont notés pour « Toutes les versions » ; les acceptations et les erreurs pour les trois versions.</p>
+      <p class="hint">Les rejets sont notés pour « Toutes les versions » ; les acceptations et les erreurs pour les trois versions. Le bouton loupe ouvre le diagnostic détaillé d'une release.</p>
+    </div>
+
+    <!-- Diagnostic -->
+    <div class="page" id="page-diag">
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="search"></span>Pourquoi ce titre n'est pas là ?</div></div>
+        <div class="section-body">
+          <p style="margin-bottom:14px;color:var(--text-secondary)">Tapez un titre (ex : <code>Soulm8te</code>) ou une release. L'outil cherche sur vos trackers, lit les dates TMDB et vous dit, pour chaque version, si le torrent est accepté ou pourquoi il est rejeté.</p>
+          <div class="input-row">
+            <input class="form-input" id="diagQ" type="search" placeholder="Titre ou nom de release…" autocomplete="off">
+            <button class="btn btn-solid" id="diagGo"><span data-icon="search"></span>Analyser</button>
+          </div>
+        </div>
+      </div>
+      <div id="diagOut"></div>
     </div>
 
     <!-- Réglages -->
     <div class="page" id="page-settings">
+
       <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="key"></span>Clé API TMDB</div><span id="tmdbBadge"></span></div>
+        <div class="section-header"><div class="section-title"><span data-icon="key"></span>Sources de données</div><span id="tmdbBadge"></span></div>
         <div class="section-body">
-          <div class="input-row">
-            <input class="form-input" id="tmdbKey" type="password" autocomplete="off" placeholder="Clé API v3 ou jeton v4">
-            <button class="btn btn-solid" id="tmdbSave">Enregistrer</button>
-            <button class="btn btn-ghost" id="tmdbTest">Tester</button>
+          <div class="opt-block">
+            <div class="t">Clé API TMDB</div>
+            <div class="d">Clé v3 (32 caractères) ou jeton v4 (long, commence par « eyJ »). Les deux fonctionnent.</div>
+            <div class="input-row">
+              <input class="form-input" id="tmdbKey" type="password" autocomplete="off" placeholder="Clé API v3 ou jeton v4">
+              <button class="btn btn-solid" id="tmdbSave">Enregistrer</button>
+              <button class="btn btn-ghost" id="tmdbTest">Tester</button>
+            </div>
           </div>
-          <p class="hint" id="tmdbHint"></p>
+          <div class="opt-block">
+            <div class="t">dvdsreleasedates.com</div>
+            <div class="d" style="margin-bottom:0" id="dvdsInfo"></div>
+          </div>
         </div>
       </div>
 
@@ -339,10 +404,10 @@ details[open] summary{margin-bottom:12px}
         <div class="section-header"><div class="section-title"><span data-icon="tune"></span>Affichage dans Stremio</div></div>
         <div class="section-body">
           <div class="opt-block">
-            <div class="t">Titre sous l'affiche</div>
-            <div class="d">Stremio n'affiche que l'affiche et le titre dans les catalogues : l'épisode et la date sont donc ajoutés au titre. Effet immédiat (quelques minutes de cache).</div>
+            <div class="t">Texte sous l'affiche</div>
+            <div class="d">Stremio n'affiche que l'affiche et un texte dans les catalogues. Effet en quelques minutes, sans réinstaller.</div>
             <div class="seg" id="optTitle">
-              <button data-f="plain">Titre seul</button><button data-f="episode">Titre + épisode</button><button data-f="episode_date">Titre + épisode + date</button>
+              <button data-f="plain">Titre seul</button><button data-f="episode">Titre + épisode</button><button data-f="episode_date">Titre + épisode + date</button><button data-f="date_only">Épisode + date, sans titre</button>
             </div>
             <div class="hint" id="titleExample"></div>
           </div>
@@ -369,17 +434,56 @@ details[open] summary{margin-bottom:12px}
           </div>
           <details>
             <summary>Avancé : déclencheur externe (facultatif)</summary>
-            <p class="hint" style="margin-top:0">Utile seulement si vous voulez des mises à jour même quand vous n'ouvrez pas Stremio. Programmez cette URL sur un service gratuit comme cron-job.org (remplacez <code>SECRET</code> par votre variable <code>CRON_SECRET</code> de Vercel). Un cycle s'arrête à <span id="budgetS">50</span> s et reprend au suivant.</p>
+            <p class="hint" style="margin-top:0">Utile seulement pour des mises à jour même quand Stremio est fermé. Programmez cette URL sur un service gratuit comme cron-job.org (remplacez <code>SECRET</code> par votre variable <code>CRON_SECRET</code> de Vercel). Un cycle s'arrête à <span id="budgetS">50</span> s et reprend au suivant.</p>
             <div class="copy-line" style="margin-top:10px"><code id="cronUrl"></code><button class="btn btn-ghost btn-small" id="copyCron"><span data-icon="copy"></span>Copier</button></div>
           </details>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="download"></span>Installation dans Stremio</div>
-          <a class="btn btn-ghost btn-small" href="/configure" target="_blank" rel="noopener">Page /configure</a></div>
-        <div class="section-body" id="installBody"></div>
+        <div class="section-header"><div class="section-title"><span data-icon="layers"></span>Règles de tri</div><button class="btn btn-ghost btn-small" id="rulesReset">Valeurs d'origine</button></div>
+        <div class="section-body">
+          <div class="opt-block">
+            <div class="setting-row">
+              <div><div class="t">Inclure les films récents dont c'est le premier torrent</div>
+                <div class="d" style="margin-bottom:0">Un film dont la sortie numérique est ancienne est quand même accepté si : release WEB/BluRay, film sorti il y a moins d'un an, et aucun torrent de ce film n'existait sur vos trackers depuis plus de 3 jours. Évite de rater un film dont le premier bon torrent n'arrive que tard.</div></div>
+              <label class="switch"><input type="checkbox" id="optFirst"><span></span></label>
+            </div>
+          </div>
+          <div class="opt-block">
+            <div class="opt-grid">
+              <div><div class="t">Film : sortie numérique récente</div><div class="d">Âge maximum de la date de sortie numérique/physique la plus ancienne.</div>
+                <select class="form-input" id="optDigital"><option value="3">3 jours</option><option value="7">7 jours (origine)</option><option value="14">14 jours</option><option value="30">30 jours</option></select></div>
+              <div><div class="t">Épisode : diffusion récente</div><div class="d">Âge maximum de la date de diffusion TMDB de l'épisode.</div>
+                <select class="form-input" id="optEpisode"><option value="24">24 heures</option><option value="48">48 heures (origine)</option><option value="72">72 heures</option><option value="168">7 jours</option></select></div>
+              <div><div class="t">Saison complète</div><div class="d">Âge maximum du dernier épisode diffusé de la saison.</div>
+                <select class="form-input" id="optSeason"><option value="3">3 jours</option><option value="7">7 jours (origine)</option><option value="14">14 jours</option></select></div>
+              <div><div class="t">Durée dans le catalogue</div><div class="d">Après ce délai, un titre disparaît du catalogue.</div>
+                <select class="form-input" id="optKeep"><option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours (origine)</option><option value="60">60 jours</option></select></div>
+            </div>
+          </div>
+          <p class="hint">Plus les fenêtres sont larges, plus le risque de voir apparaître un titre qui n'est pas vraiment une nouveauté augmente. Pour retester les torrents déjà rejetés après un changement, utilisez « Retraiter les rejetés » ci-dessous.</p>
+        </div>
       </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="trash"></span>Maintenance</div></div>
+        <div class="section-body">
+          <div class="opt-block">
+            <div class="setting-row">
+              <div><div class="t">Retraiter les rejetés</div><div class="d" style="margin-bottom:0">Tous les torrents déjà examinés seront réexaminés au prochain cycle. Les catalogues actuels sont conservés.</div></div>
+              <button class="btn btn-ghost" id="seenBtn"><span data-icon="replay"></span>Retraiter</button>
+            </div>
+          </div>
+          <div class="opt-block">
+            <div class="setting-row">
+              <div><div class="t">Vider les catalogues</div><div class="d" style="margin-bottom:0">Les 3 versions (Toutes, VF, VFF) sont vidées et tout sera réexaminé au prochain cycle.</div></div>
+              <button class="btn btn-danger" id="clearBtn"><span data-icon="trash"></span>Vider</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div></main>
@@ -400,6 +504,16 @@ details[open] summary{margin-bottom:12px}
       <button class="btn btn-ghost" id="trCancel">Annuler</button>
       <button class="btn btn-solid" id="trSave">Enregistrer</button>
     </div>
+  </div>
+</div>
+
+<!-- Modale d'installation -->
+<div class="modal" id="installModal">
+  <div class="modal-content" style="max-width:560px">
+    <div class="modal-title">Installer dans Stremio</div>
+    <div class="modal-sub">Choisissez la version. Collez le lien dans Stremio (Addons, Installer depuis une URL) si le bouton ne s'ouvre pas.</div>
+    <div id="installBody"></div>
+    <div class="modal-actions" style="margin-top:18px"><a class="btn btn-ghost" href="/configure" target="_blank" rel="noopener">Page /configure</a><button class="btn btn-solid" id="installClose">Fermer</button></div>
   </div>
 </div>
 
@@ -438,12 +552,13 @@ const ICONS = {
   download: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
   layers: 'M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z',
   key: 'M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
-  list: 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
   tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+  list: 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
+  search: 'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
 };
 const svg = n => `<svg viewBox="0 0 24 24" width="18" height="18"><path d="${ICONS[n]}"/></svg>`;
 const icon = n => { const s = document.createElement('span'); s.style.display = 'inline-flex'; s.innerHTML = svg(n); return s; };
-function hydrateIcons(root = document) { root.querySelectorAll('[data-icon]').forEach(e => { if (!e.firstChild) e.innerHTML = svg(e.dataset.icon); e.style.display = 'inline-flex'; }); }
+function hydrateIcons() { document.querySelectorAll('[data-icon]').forEach(e => { if (!e.firstChild) e.innerHTML = svg(e.dataset.icon); e.style.display = 'inline-flex'; }); }
 
 const $ = s => document.querySelector(s);
 function h(tag, props, ...kids) {
@@ -457,15 +572,13 @@ function h(tag, props, ...kids) {
   return e;
 }
 
-/* ---------- Toasts ---------- */
+/* ---------- Notifications & confirmation ---------- */
 function toast(type, title, msg) {
   const t = h('div', { class: 'toast ' + type }, h('span', { class: 'toast-icon' }, icon(type === 'error' || type === 'warning' ? 'warning' : type === 'info' ? 'info' : 'check')),
     h('div', {}, h('div', { class: 'toast-title' }, title), msg ? h('div', { class: 'toast-message' }, msg) : ''));
   $('#toasts').append(t);
   setTimeout(() => { t.classList.add('hiding'); setTimeout(() => t.remove(), 300); }, type === 'error' || type === 'warning' ? 7000 : 3500);
 }
-
-/* ---------- Confirmation ---------- */
 function confirmBox({ title, message, yes = 'Confirmer', danger = true }) {
   return new Promise(res => {
     $('#cfTitle').textContent = title; $('#cfMsg').textContent = message; $('#cfYes').textContent = yes;
@@ -496,6 +609,10 @@ function ago(t) {
   if (s < 86400) return 'il y a ' + Math.round(s / 3600) + ' h';
   return 'il y a ' + Math.round(s / 86400) + ' j';
 }
+function inFuture(t) {
+  const m = Math.max(1, Math.round((t - Date.now()) / 60000));
+  return m < 60 ? 'dans ' + m + ' min' : 'dans ' + Math.round(m / 60) + ' h';
+}
 async function copy(text) {
   try { await navigator.clipboard.writeText(text); toast('success', 'Copié'); }
   catch { const i = h('textarea'); i.value = text; document.body.append(i); i.select(); document.execCommand('copy'); i.remove(); toast('success', 'Copié'); }
@@ -503,14 +620,17 @@ async function copy(text) {
 const fullDate = t => new Date(t).toLocaleDateString('fr-FR');
 
 /* ---------- Navigation ---------- */
+const PAGES = ['dashboard', 'trackers', 'catalog', 'log', 'diag', 'settings'];
 let S = null, page = (location.hash || '#dashboard').slice(1);
 function goto(p) {
-  if (!['dashboard', 'trackers', 'catalog', 'log', 'settings'].includes(p)) p = 'dashboard';
+  if (!PAGES.includes(p)) p = 'dashboard';
   page = p; history.replaceState(null, '', '#' + p);
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.page === p));
   document.querySelectorAll('.page').forEach(x => x.classList.toggle('active', x.id === 'page-' + p));
   if (p === 'catalog') loadCatalog();
   if (p === 'log') loadLog();
+  if (p === 'diag') $('#diagQ').focus();
+  window.scrollTo(0, 0);
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('.nav-tab'); if (b) goto(b.dataset.page); });
 
@@ -523,13 +643,12 @@ $('#loginBtn').onclick = async () => {
 $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); });
 $('#logout').onclick = guard(async () => { await api('POST', '/logout'); showLogin(); });
 
-/* ---------- Chargement & rendu ---------- */
+/* ---------- Chargement ---------- */
 async function load(full) {
   try { S = await api('GET', '/state'); } catch { return; }
   $('#login').hidden = true; $('#app').hidden = false;
   renderHeader(); renderDashboard(); renderTrackers();
-  if (full) { renderSettings(); goto(page); }
-  else renderInstall();
+  if (full) { renderSettings(); renderInstall(); goto(page); }
 }
 
 function renderHeader() {
@@ -539,32 +658,53 @@ function renderHeader() {
   $('#runBtn').disabled = r.busy;
 }
 
+/* ---------- Tableau de bord ---------- */
 function statCard(ic, tone, label, value, sub) {
   return h('div', { class: 'stat-card' }, h('div', { class: 'stat-card-header' }, h('div', { class: 'stat-icon ' + tone }, icon(ic)), h('div', { class: 'stat-label' }, label)),
     h('div', { class: 'stat-value' }, value), sub ? h('div', { class: 'stat-sub' }, sub) : '');
 }
 function renderDashboard() {
-  const c = S.counts.all || { movies: 0, series: 0, anime: 0 }, r = S.run;
+  const c = S.counts.all || { movies: 0, series: 0, anime: 0 }, r = S.run, st = S.settings;
   const act = S.trackers.filter(t => t.enabled).length;
+  let next, nextSub = '';
+  if (!st.autoRefreshMin) { next = 'Désactivée'; nextSub = 'Réglages > Mise à jour automatique'; }
+  else if (S.autoNext && S.autoNext > Date.now()) { next = inFuture(S.autoNext); nextSub = 'si vous ouvrez Stremio'; }
+  else { next = 'À l\'ouverture'; nextSub = 'de Stremio'; }
   $('#stats').replaceChildren(
     statCard('film', 'primary', 'Films', c.movies, 'Toutes les versions'),
     statCard('tv', 'info', 'Séries', c.series, 'Toutes les versions'),
     statCard('star', 'warning', 'Animés', c.anime, 'Toutes les versions'),
     statCard('server', act ? 'success' : 'danger', 'Trackers actifs', act + ' / ' + S.trackers.length, act ? '' : 'Aucun tracker actif'),
     statCard('clock', r.busy ? 'primary' : 'success', 'Dernier cycle', r.busy ? 'En cours' : ago(r.last), r.ms ? 'Durée : ' + Math.round(r.ms / 1000) + ' s' + (r.postponed ? ' · ' + r.postponed + ' reporté(s)' : '') : ''),
-    statCard('download', S.dvdsOn && !S.dvds ? 'danger' : 'success', 'dvdsreleasedates', S.dvdsOn ? S.dvds : 'Désactivé', S.dvdsOn ? 'date(s) de sortie numérique lue(s)' : '')
+    statCard('refresh', st.autoRefreshMin ? 'info' : 'warning', 'Prochaine mise à jour', next, nextSub)
   );
+
+  // dernières sorties
+  $('#latest').replaceChildren(S.latest && S.latest.length ? h('div', { class: 'latest-grid' }, S.latest.map(i => h('div', { class: 'poster-card' },
+    i.poster ? h('img', { src: i.poster, alt: '', loading: 'lazy' }) : h('div', { class: 'noimg' }, icon('film')),
+    h('div', { class: 'pc-body' }, h('div', { class: 'pc-name' }, i.name), h('div', { class: 'pc-desc' }, i.desc), h('div', { class: 'pc-desc' }, ago(i.ts)))))) :
+    h('div', { class: 'empty' }, 'Aucun titre pour le moment. Lancez un cycle ou ouvrez Stremio : la mise à jour se fait toute seule.'));
+
+  // versions
   $('#langRows').replaceChildren(...Object.keys(S.langs).map(l => {
-    const k = S.counts[l] || { movies: 0, series: 0, anime: 0 }, st = r.stats[l];
-    const n = v => h('td', { class: 'num' }, st ? v : '—');
+    const k = S.counts[l] || { movies: 0, series: 0, anime: 0 }, s = r.stats[l];
+    const n = v => h('td', { class: 'num' }, s ? v : '—');
     return h('tr', {}, h('td', {}, h('b', {}, S.langs[l])), h('td', { class: 'num' }, k.movies), h('td', { class: 'num' }, k.series), h('td', { class: 'num' }, k.anime),
-      n(st && st.neuf), n(st && st.ok), n(st && st.ko), h('td', { class: 'num' }, st ? (st.err ? h('span', { class: 'badge danger' }, st.err) : 0) : '—'));
+      n(s && s.neuf), n(s && s.ok), n(s && s.ko), h('td', { class: 'num' }, s ? (s.err ? h('span', { class: 'badge danger' }, s.err) : 0) : '—'));
   }));
-  const total = (S.counts.all.movies || 0) + (S.counts.all.series || 0) + (S.counts.all.anime || 0);
+
+  // activité
+  const max = Math.max(1, ...S.activity.map(a => a.n));
+  $('#bars').replaceChildren(...S.activity.map((a, i) => h('div', { class: 'bar', title: a.d + ' : ' + a.n + ' titre(s)' },
+    h('div', { class: 'n' }, a.n || ''), h('div', { class: 'col' + (a.n ? '' : ' zero'), style: 'height:' + (a.n ? Math.max(6, Math.round(a.n / max * 82)) : 3) + '%' }),
+    h('div', { class: 'l' }, i % 2 === 0 ? a.d.slice(0, 5) : ''))));
+
+  // démarrage guidé
+  const total = c.movies + c.series + c.anime;
   const steps = [
     [S.tmdb.set, 'Clé TMDB enregistrée', 'Onglet Réglages', 'settings'],
     [act > 0, 'Au moins un tracker actif', 'Onglet Trackers', 'trackers'],
-    [!!r.last, 'Premier cycle terminé', 'Bouton « Lancer un cycle » ci-dessous', null],
+    [!!r.last, 'Premier cycle terminé', 'Bouton « Lancer un cycle »', null],
     [total > 0, 'Des titres dans le catalogue', 'Ils apparaissent après un cycle réussi', 'catalog'],
   ];
   const left = steps.filter(x => !x[0]).length;
@@ -572,16 +712,26 @@ function renderDashboard() {
   $('#setupCount').textContent = (steps.length - left) + ' / ' + steps.length;
   $('#setupBody').replaceChildren(...steps.map(([ok, t, d, go]) => h('div', { class: 'check' + (ok ? ' done' : '') }, h('span', { class: 'dotc' }, icon('check')),
     h('div', {}, h('div', { class: 't' }, t), h('div', { class: 'd' }, d)), !ok && go ? h('button', { class: 'btn btn-ghost btn-small go', onclick: () => goto(go) }, 'Y aller') : '')));
+
+  // alertes
   const al = [];
   if (!S.tmdb.set) al.push(['danger', 'Clé TMDB manquante', 'Ajoutez-la dans Réglages : sans elle, aucun cycle ne peut tourner.']);
   if (!S.trackers.length) al.push(['danger', 'Aucun tracker', 'Ajoutez votre premier tracker dans l\'onglet Trackers.']);
   S.trackers.filter(t => t.status && !t.status.ok).forEach(t => al.push(['warning', 'Tracker « ' + t.name + ' » en erreur', t.status.error]));
-  if (S.dvdsOn && !S.dvds && r.last) al.push(['warning', 'dvdsreleasedates.com : 0 date lue', 'Source ignorée (page inaccessible ou format à ajuster dans parseDvds). Les films restent validés par les dates TMDB.']);
-  if (r.stats && Object.values(r.stats).some(s => s.err)) al.push(['warning', 'Erreurs transitoires', 'Certains torrents seront retentés au prochain cycle.']);
+  if (S.dvdsOn && !S.dvds && r.last) al.push(['warning', 'dvdsreleasedates.com : 0 date lue', 'Source ignorée (page inaccessible ou format à ajuster). Les films restent validés par les dates TMDB.']);
+  if (r.stats && Object.values(r.stats).some(x => x.err)) al.push(['warning', 'Erreurs transitoires', 'Certains torrents seront retentés au prochain cycle (voir le Journal).']);
   $('#alerts').hidden = !al.length;
   $('#alertsBody').replaceChildren(...al.map(([tone, t, d]) => h('div', { style: 'display:flex;gap:12px;align-items:flex-start;padding:6px 0' }, h('span', { class: 'badge ' + tone }, tone === 'danger' ? 'Action' : 'Info'), h('div', {}, h('b', {}, t), h('div', { class: 'hint', style: 'margin-top:2px' }, d)))));
 }
 
+$('#runBtn').onclick = guard(async () => {
+  const b = $('#runBtn'); b.disabled = true; b.firstChild.classList.add('spin');
+  toast('info', 'Cycle lancé', 'Jusqu\'à ' + S.run.budgetS + ' s — ne fermez pas la page.');
+  try { const x = await api('POST', '/refresh'); toast(x.skipped ? 'warning' : x.ok === false ? 'error' : 'success', x.skipped ? 'Cycle non lancé' : x.ok === false ? 'Erreur' : 'Cycle terminé', x.message); }
+  finally { b.firstChild.classList.remove('spin'); await load(false); }
+});
+
+/* ---------- Trackers ---------- */
 function statusBadge(t) {
   if (!t.enabled) return h('span', { class: 'badge muted' }, 'Désactivé');
   if (!t.status) return h('span', { class: 'badge muted' }, 'Pas encore interrogé');
@@ -606,10 +756,9 @@ function renderTrackers() {
           h('button', { class: 'btn-icon danger', title: 'Supprimer', onclick: guard(async () => {
             if (!(await confirmBox({ title: 'Supprimer ce tracker ?', message: '« ' + t.name + ' » ne sera plus interrogé. Les titres déjà validés restent dans les catalogues.', yes: 'Supprimer' }))) return;
             await api('DELETE', '/trackers/' + t.id); toast('success', 'Tracker supprimé'); await load(false);
-          }) }, icon('trash'))))); }))))) ;
+          }) }, icon('trash')))));
+    })))));
 }
-
-/* Modale tracker */
 let editing = null;
 function openTracker(t) {
   editing = t || null;
@@ -649,7 +798,7 @@ function renderCatalog() {
       h('td', {}, h('code', {}, i.id)), h('td', {}, h('small', {}, fullDate(i.ts))),
       h('td', {}, h('div', { class: 'row-actions' }, h('button', { class: 'btn-icon danger', title: 'Retirer des catalogues', onclick: guard(async () => {
         if (!(await confirmBox({ title: 'Retirer ce titre ?', message: '« ' + i.name + ' » sera retiré des 3 versions du catalogue. Il ne reviendra que si un nouveau torrent est validé.', yes: 'Retirer' }))) return;
-        await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadCatalog();
+        await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadCatalog(); await load(false);
       }) }, icon('trash')))))))) : h('div', { class: 'empty' }, CAT.items.length ? 'Aucun résultat pour ce filtre.' : 'Catalogue vide pour le moment. Lancez un cycle depuis le tableau de bord.'));
 }
 $('#catType').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; CAT.type = b.dataset.t; document.querySelectorAll('#catType button').forEach(x => x.classList.toggle('active', x === b)); renderCatalog(); });
@@ -667,64 +816,71 @@ function renderLog() {
   const list = LOG.items.filter(x => (LOG.kind === 'all' || x.kind === LOG.kind) && (!q || x.title.toLowerCase().includes(q) || String(x.reason).toLowerCase().includes(q)));
   $('#logCount').textContent = list.length + ' entrée(s)';
   const tone = { ok: ['success', 'Accepté'], ko: ['muted', 'Rejeté'], err: ['danger', 'Erreur'] };
-  $('#logBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Résultat', 'Version', 'Release', 'Raison / détail', 'Tracker'].map(x => h('th', {}, x)))),
+  $('#logBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Résultat', 'Version', 'Release', 'Raison / détail', 'Tracker', ''].map(x => h('th', {}, x)))),
     h('tbody', {}, list.map(x => h('tr', {}, h('td', {}, h('small', {}, ago(x.t))), h('td', {}, h('span', { class: 'badge ' + tone[x.kind][0] }, tone[x.kind][1])),
-      h('td', {}, h('small', {}, LANG_SHORT[x.lang] || x.lang)), h('td', { class: 'mono' }, x.title), h('td', {}, x.reason), h('td', {}, h('small', {}, x.tr || '')))))) :
+      h('td', {}, h('small', {}, LANG_SHORT[x.lang] || x.lang)), h('td', { class: 'mono' }, x.title), h('td', {}, x.reason), h('td', {}, h('small', {}, x.tr || '')),
+      h('td', {}, h('button', { class: 'btn-icon', title: 'Diagnostic détaillé', onclick: () => { goto('diag'); $('#diagQ').value = x.title; runDiag(); } }, icon('search'))))))) :
     h('div', { class: 'empty' }, LOG.items.length ? 'Aucune entrée pour ce filtre.' : 'Le journal est vide. Il se remplit à chaque cycle.'));
 }
 $('#logKind').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; LOG.kind = b.dataset.k; document.querySelectorAll('#logKind button').forEach(x => x.classList.toggle('active', x === b)); renderLog(); });
 $('#logSearch').addEventListener('input', e => { LOG.q = e.target.value; renderLog(); });
+$('#logReload').onclick = guard(loadLog);
 $('#logClear').onclick = guard(async () => {
   if (!(await confirmBox({ title: 'Effacer le journal ?', message: 'Seul l\'historique affiché ici est supprimé.', yes: 'Effacer' }))) return;
   await api('DELETE', '/log'); toast('success', 'Journal effacé'); await loadLog();
 });
 
-/* ---------- Actions du tableau de bord ---------- */
-$('#runBtn').onclick = guard(async () => {
-  const b = $('#runBtn'); b.disabled = true; b.firstChild.classList.add('spin');
-  toast('info', 'Cycle lancé', 'Jusqu\'à ' + S.run.budgetS + ' s — ne fermez pas la page.');
-  try { const x = await api('POST', '/refresh'); toast(x.skipped ? 'warning' : x.ok === false ? 'error' : 'success', x.skipped ? 'Cycle non lancé' : x.ok === false ? 'Erreur' : 'Cycle terminé', x.message); }
-  finally { b.firstChild.classList.remove('spin'); await load(false); }
+/* ---------- Diagnostic ---------- */
+const runDiag = guard(async () => {
+  const q = $('#diagQ').value.trim();
+  if (q.length < 2) return toast('warning', 'Recherche trop courte', 'Saisissez au moins 2 caractères.');
+  const out = $('#diagOut'), b = $('#diagGo'); b.disabled = true;
+  out.replaceChildren(h('div', { class: 'section' }, h('div', { class: 'empty' }, 'Analyse en cours… cela peut durer jusqu\'à 30 secondes.')));
+  try {
+    const r = await api('POST', '/explain', { q });
+    const cards = [];
+    r.errors.forEach(e => cards.push(h('div', { class: 'diag-card' }, h('span', { class: 'badge danger' }, 'Tracker en erreur'), ' ', e)));
+    if (!r.results.length) cards.push(h('div', { class: 'section' }, h('div', { class: 'empty' }, 'Aucun torrent trouvé sur vos trackers pour « ' + q + ' ». Essayez un autre mot, ou vérifiez que le tracker l\'a bien en ligne.')));
+    r.results.forEach(x => {
+      const inf = x.info || {};
+      cards.push(h('div', { class: 'diag-card' },
+        h('div', { class: 'diag-head' }, h('span', { class: 'badge ' + (x.kind === 'movie' ? 'primary' : 'info') }, x.kind === 'movie' ? 'Film' : 'Série'), h('span', { class: 'mono' }, x.title),
+          h('small', { style: 'color:var(--text-muted)' }, x.tracker + (x.pub ? ' · posté ' + ago(x.pub) : ''))),
+        inf.error ? h('div', { class: 'diag-info' }, h('span', { class: 'badge danger' }, 'TMDB'), ' ' + inf.error) :
+          h('div', { class: 'diag-info' }, h('b', {}, inf.title || '?'), inf.year ? ' (' + inf.year + ')' : '', ' · TMDB ' + inf.tmdbId, inf.imdb ? ' · ' : ' · pas d\'ID IMDb', inf.imdb ? h('code', {}, inf.imdb) : ''),
+        inf.lines ? h('div', { class: 'dates' }, inf.lines.map(([k, v]) => h('div', {}, h('b', {}, k), v))) : '',
+        ...Object.keys(S.langs).map(l => { const v = x.verdicts[l]; return h('div', { class: 'verdict' }, h('span', { class: 'lg' }, LANG_SHORT[l]),
+          h('span', { class: 'badge ' + (v.ok ? 'success' : v.err ? 'danger' : 'muted') }, v.ok ? 'Accepté' : v.err ? 'Erreur' : 'Rejeté'), h('span', {}, v.text)); })));
+    });
+    out.replaceChildren(...cards);
+  } finally { b.disabled = false; }
 });
-$('#seenBtn').onclick = guard(async () => {
-  if (!(await confirmBox({ title: 'Retraiter les rejetés ?', message: 'Tous les torrents déjà examinés seront réexaminés au prochain cycle (utile après un changement de configuration). Les catalogues actuels sont conservés.', yes: 'Retraiter', danger: false }))) return;
-  await api('POST', '/reset', { what: 'seen' }); toast('success', 'Torrents remis en file'); await load(false);
-});
-$('#clearBtn').onclick = guard(async () => {
-  if (!(await confirmBox({ title: 'Vider les catalogues ?', message: 'Les 3 versions (Toutes, VF, VFF) sont vidées et tout sera réexaminé au prochain cycle.', yes: 'Vider' }))) return;
-  await api('POST', '/reset', { what: 'items' }); toast('success', 'Catalogues vidés'); await load(false);
-});
+$('#diagGo').onclick = runDiag;
+$('#diagQ').addEventListener('keydown', e => { if (e.key === 'Enter') runDiag(); });
 
 /* ---------- Réglages ---------- */
 function titleExample(f) {
-  const base = 'Antigang';
-  return 'Exemple : ' + (f === 'plain' ? base : f === 'episode' ? base + ' · S02E15' : base + ' · S02E15 · 30/09');
+  const t = 'Antigang';
+  return 'Exemple : ' + (f === 'plain' ? t : f === 'episode' ? t + ' · S02E15' : f === 'episode_date' ? t + ' · S02E15 · 30/09' : 'S02E15 · 30/09');
 }
+function renderAutoBadge() { $('#autoBadge').replaceChildren(h('span', { class: 'badge ' + (S.settings.autoRefreshMin ? 'success' : 'muted') }, S.settings.autoRefreshMin ? 'Active' : 'Désactivée')); }
 function renderSettings() {
+  const st = S.settings;
   $('#tmdbBadge').replaceChildren(h('span', { class: 'badge ' + (S.tmdb.set ? 'success' : 'danger') }, S.tmdb.set ? 'Clé enregistrée ' + S.tmdb.hint : 'Non configurée'));
   $('#tmdbKey').placeholder = S.tmdb.set ? 'Clé enregistrée — saisir une nouvelle valeur pour la remplacer' : 'Clé API v3 ou jeton v4';
-  $('#tmdbHint').textContent = 'Clé v3 (32 caractères) ou jeton v4 (long, commence par « eyJ »). Les deux fonctionnent.';
-  $('#optStream').checked = S.settings.streamInfo;
-  const f = S.settings.titleFormat;
-  document.querySelectorAll('#optTitle button').forEach(b => b.classList.toggle('active', b.dataset.f === f));
-  $('#titleExample').textContent = titleExample(f);
-  $('#optAuto').value = String(S.settings.autoRefreshMin);
-  $('#autoBadge').replaceChildren(h('span', { class: 'badge ' + (S.settings.autoRefreshMin ? 'success' : 'muted') }, S.settings.autoRefreshMin ? 'Active' : 'Désactivée'));
+  $('#dvdsInfo').textContent = !S.dvdsOn ? 'Désactivée (variable DVDS=0). Les films sont validés par les dates TMDB uniquement.' :
+    S.dvds ? S.dvds + ' date(s) de sortie numérique américaine lue(s) : source active, relue toutes les 6 h.' : 'Aucune date lue : la source est ignorée (page inaccessible ou format à ajuster). Sans conséquence grave : les films restent validés par TMDB.';
+  $('#optStream').checked = st.streamInfo;
+  document.querySelectorAll('#optTitle button').forEach(b => b.classList.toggle('active', b.dataset.f === st.titleFormat));
+  $('#titleExample').textContent = titleExample(st.titleFormat);
+  $('#optAuto').value = String(st.autoRefreshMin); renderAutoBadge();
+  $('#optFirst').checked = st.movieFirstTorrent;
+  $('#optDigital').value = String(st.digitalDays); $('#optEpisode').value = String(st.episodeHours);
+  $('#optSeason').value = String(st.seasonDays); $('#optKeep').value = String(st.keepDays);
   $('#cronUrl').textContent = location.origin + '/cron?key=SECRET';
   $('#budgetS').textContent = S.run.budgetS;
-  renderInstall();
 }
-function renderInstall() {
-  const box = $('#installBody');
-  if (box.dataset.ready) return;
-  box.dataset.ready = '1';
-  box.replaceChildren(...Object.keys(S.langs).map(l => {
-    const u = location.origin + '/' + l + '/manifest.json';
-    return h('div', { class: 'install-row' }, h('div', {}, h('div', { class: 't' }, S.langs[l]), h('code', {}, u)),
-      h('div', { class: 'row-actions' }, h('button', { class: 'btn btn-ghost btn-small', onclick: () => copy(u) }, icon('copy'), 'Copier'),
-        h('a', { class: 'btn btn-primary btn-small', href: 'stremio://' + location.host + '/' + l + '/manifest.json' }, icon('download'), 'Installer')));
-  }));
-}
+const saveSetting = async (patch, msg) => { await api('PUT', '/settings', patch); Object.assign(S.settings, patch); toast('success', msg || 'Enregistré'); };
 $('#tmdbSave').onclick = guard(async () => {
   const k = $('#tmdbKey').value.trim(); if (!k) return toast('error', 'Clé manquante', 'Saisissez une clé TMDB.');
   await api('PUT', '/tmdb', { key: k }); $('#tmdbKey').value = ''; toast('success', 'Clé TMDB enregistrée'); await load(false); renderSettings();
@@ -732,23 +888,46 @@ $('#tmdbSave').onclick = guard(async () => {
 $('#tmdbTest').onclick = guard(async () => { const r = await api('POST', '/tmdb/test', { key: $('#tmdbKey').value }); toast(r.ok ? 'success' : 'error', r.ok ? 'TMDB' : 'Échec du test', r.message); });
 $('#optTitle').addEventListener('click', guard(async e => {
   const b = e.target.closest('button'); if (!b) return;
-  await api('PUT', '/settings', { titleFormat: b.dataset.f }); S.settings.titleFormat = b.dataset.f;
+  await saveSetting({ titleFormat: b.dataset.f }, 'Affichage enregistré — visible dans Stremio d\'ici quelques minutes');
   document.querySelectorAll('#optTitle button').forEach(x => x.classList.toggle('active', x === b)); $('#titleExample').textContent = titleExample(b.dataset.f);
-  toast('success', 'Affichage enregistré', 'Visible dans Stremio d\'ici quelques minutes.');
 }));
-$('#optAuto').onchange = guard(async () => {
-  await api('PUT', '/settings', { autoRefreshMin: +$('#optAuto').value }); S.settings.autoRefreshMin = +$('#optAuto').value;
-  $('#autoBadge').replaceChildren(h('span', { class: 'badge ' + (S.settings.autoRefreshMin ? 'success' : 'muted') }, S.settings.autoRefreshMin ? 'Active' : 'Désactivée'));
-  toast('success', 'Fréquence enregistrée');
+$('#optStream').onchange = guard(async () => saveSetting({ streamInfo: $('#optStream').checked }, 'Option enregistrée — réinstallez l\'addon dans Stremio pour l\'appliquer'));
+$('#optAuto').onchange = guard(async () => { await saveSetting({ autoRefreshMin: +$('#optAuto').value }, 'Fréquence enregistrée'); renderAutoBadge(); renderDashboard(); });
+$('#optFirst').onchange = guard(async () => saveSetting({ movieFirstTorrent: $('#optFirst').checked }, 'Règle enregistrée — utilisez « Retraiter les rejetés » pour retester'));
+[['#optDigital', 'digitalDays'], ['#optEpisode', 'episodeHours'], ['#optSeason', 'seasonDays'], ['#optKeep', 'keepDays']].forEach(([sel, key]) => {
+  $(sel).onchange = guard(async () => saveSetting({ [key]: +$(sel).value }, 'Règle enregistrée — utilisez « Retraiter les rejetés » pour retester'));
 });
-$('#optStream').onchange = guard(async () => { await api('PUT', '/settings', { streamInfo: $('#optStream').checked }); toast('success', 'Option enregistrée', 'Réinstallez l\'addon dans Stremio pour l\'appliquer.'); });
+$('#rulesReset').onclick = guard(async () => {
+  await saveSetting({ movieFirstTorrent: true, digitalDays: 7, episodeHours: 48, seasonDays: 7, keepDays: 30 }, 'Valeurs d\'origine rétablies'); renderSettings();
+});
 $('#copyCron').onclick = () => copy($('#cronUrl').textContent);
+$('#seenBtn').onclick = guard(async () => {
+  if (!(await confirmBox({ title: 'Retraiter les rejetés ?', message: 'Tous les torrents déjà examinés seront réexaminés au prochain cycle (utile après un changement de règle). Les catalogues actuels sont conservés.', yes: 'Retraiter', danger: false }))) return;
+  await api('POST', '/reset', { what: 'seen' }); toast('success', 'Torrents remis en file', 'Lancez un cycle depuis le tableau de bord.'); await load(false);
+});
+$('#clearBtn').onclick = guard(async () => {
+  if (!(await confirmBox({ title: 'Vider les catalogues ?', message: 'Les 3 versions (Toutes, VF, VFF) sont vidées et tout sera réexaminé au prochain cycle.', yes: 'Vider' }))) return;
+  await api('POST', '/reset', { what: 'items' }); toast('success', 'Catalogues vidés'); await load(false);
+});
+
+/* ---------- Installation (modale) ---------- */
+function renderInstall() {
+  $('#installBody').replaceChildren(...Object.keys(S.langs).map(l => {
+    const u = location.origin + '/' + l + '/manifest.json';
+    return h('div', { class: 'install-row' }, h('div', {}, h('div', { class: 't' }, S.langs[l]), h('code', {}, u)),
+      h('div', { class: 'row-actions' }, h('button', { class: 'btn btn-ghost btn-small', onclick: () => copy(u) }, icon('copy'), 'Copier'),
+        h('a', { class: 'btn btn-primary btn-small', href: 'stremio://' + location.host + '/' + l + '/manifest.json' }, icon('download'), 'Installer')));
+  }));
+}
+$('#installBtn').onclick = () => $('#installModal').classList.add('show');
+$('#installClose').onclick = () => $('#installModal').classList.remove('show');
+$('#installModal').addEventListener('mousedown', e => { if (e.target.id === 'installModal') e.target.classList.remove('show'); });
 
 /* ---------- Démarrage ---------- */
 hydrateIcons();
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeTracker(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeTracker(); $('#installModal').classList.remove('show'); } });
 load(true);
-setInterval(() => { if (!$('#app').hidden && document.visibilityState === 'visible' && !document.querySelector('.modal.show')) load(false); }, 20000);
+setInterval(() => { if (!$('#app').hidden && document.visibilityState === 'visible' && !document.querySelector('.modal.show') && page === 'dashboard') load(false); }, 20000);
 </script>
 </body>
 </html>

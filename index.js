@@ -33,7 +33,6 @@ const SAVE_MARGIN_MS = 12000;   // temps réservé à la sauvegarde en fin de cy
 const TRACKER_DELAY_MS = process.env.TRACKER_DELAY_MS !== undefined ? +process.env.TRACKER_DELAY_MS : 1500; // politesse envers les trackers
 const DVDS_ON = process.env.DVDS !== '0';
 const DVDS_URL = process.env.DVDS_URL || 'https://www.dvdsreleasedates.com/digital-releases/';
-const KEEP_MS = 30 * DAY;       // durée de conservation des titres validés
 const SEEN_KEEP_MS = 30 * DAY;  // durée de conservation des infohash déjà traités
 const PAGE = 50;
 const UA = 'StremioSortiesRecentes/3.0';
@@ -51,14 +50,20 @@ const fmt = t => new Date(t).toLocaleDateString('fr-FR', { timeZone: 'Europe/Par
 const seenKey = h => h.slice(0, 20); // clé compacte pour rester loin de la limite de taille des valeurs
 
 /* ------------------------------------------------------------------ configuration (dashboard) */
+const TITLE_FORMATS = ['plain', 'episode', 'episode_date', 'date_only'];
+const LISTS = { autoRefreshMin: [0, 15, 30, 60, 120, 360], digitalDays: [3, 7, 14, 30], episodeHours: [24, 48, 72, 168], seasonDays: [3, 7, 14], keepDays: [7, 14, 30, 60] };
+const pick = (list, v, def) => list.includes(+v) ? +v : def;
 let cfgCache = null, cfgAt = 0;
 async function getConfig(force) {
   if (!force && cfgCache && Date.now() - cfgAt < 30000) return cfgCache;
   const c = (await kv.get(KEY.config)) || {};
   cfgCache = {
     tmdbKey: c.tmdbKey || '', streamInfo: !!c.streamInfo, trackers: Array.isArray(c.trackers) ? c.trackers : [],
-    autoRefreshMin: c.autoRefreshMin === undefined ? 30 : Math.max(0, +c.autoRefreshMin || 0), // 0 = désactivé
-    titleFormat: ['plain', 'episode', 'episode_date'].includes(c.titleFormat) ? c.titleFormat : 'episode',
+    autoRefreshMin: pick(LISTS.autoRefreshMin, c.autoRefreshMin, 30), // 0 = désactivé
+    titleFormat: TITLE_FORMATS.includes(c.titleFormat) ? c.titleFormat : 'episode',
+    movieFirstTorrent: c.movieFirstTorrent === undefined ? true : !!c.movieFirstTorrent,
+    digitalDays: pick(LISTS.digitalDays, c.digitalDays, 7), episodeHours: pick(LISTS.episodeHours, c.episodeHours, 48),
+    seasonDays: pick(LISTS.seasonDays, c.seasonDays, 7), keepDays: pick(LISTS.keepDays, c.keepDays, 30),
   };
   cfgAt = Date.now();
   return cfgCache;
@@ -257,40 +262,53 @@ async function resolveTmdb(env, it, rel, kind) {
   if (!r) { const m = await tmdb(env, '/search/multi', { query: rel.name }); r = m && (m.results || []).find(x => x.media_type === mt); }
   return r ? r.id : 0;
 }
-// film sans date numérique/physique : « premier torrent »
-async function premierTorrent(env, it, rel, d, tmdbId, cinema, now) {
-  if (!rel.webOrBd) return false;
+const daysAgo = t => Math.round((Date.now() - t) / DAY);
+const R0 = { digitalDays: 7, episodeHours: 48, seasonDays: 7, movieFirstTorrent: true }; // règles d'origine
+const rulesOf = c => ({ digitalDays: c.digitalDays, episodeHours: c.episodeHours, seasonDays: c.seasonDays, movieFirstTorrent: c.movieFirstTorrent });
+
+// « Premier torrent » : retourne null si valide, sinon la raison du refus.
+// strictCinema = film sans aucune date numérique/physique (règle d'origine : sortie cinéma il y a 30 à 183 jours).
+async function premierTorrent(env, it, rel, d, tmdbId, cinema, now, strictCinema) {
+  if (!rel.webOrBd) return 'release pas en WEB/BluRay (HDTV, CAM, TS… refusés)';
   const rd = Date.parse(d.release_date);
-  if (isNaN(rd) || now - rd >= 365 * DAY || rd > now) return false;
-  if (cinema == null) return false;
-  const age = (now - cinema) / DAY;
-  if (age < 30 || age > 183) return false;
+  if (isNaN(rd)) return 'date de sortie du film inconnue';
+  if (rd > now) return 'film pas encore sorti';
+  if (now - rd >= 365 * DAY) return 'film sorti le ' + fmt(rd) + ' (plus d\'un an)';
+  if (strictCinema) {
+    if (cinema == null) return 'aucune sortie cinéma connue';
+    const age = (now - cinema) / DAY;
+    if (age < 30 || age > 183) return 'sortie cinéma il y a ' + Math.round(age) + ' j (hors de 30–183 j)';
+  }
   const h = await history(it.tr, tmdbId);
-  if (!h.length || h.length >= 100 || !h.some(x => x.hash === it.hash)) return false;
+  if (h.length >= 100) return 'historique du tracker incomplet (' + h.length + ' résultats : le tracker ignore peut-être le filtre tmdbid)';
+  if (!h.length) return 'historique du tracker vide';
+  if (!h.some(x => x.hash === it.hash)) return 'ce torrent n\'apparaît pas dans l\'historique du tracker';
   for (const tr of env.trackers) { // plusieurs trackers : aucun ne doit avoir de torrent de ce film de plus de 3 jours
     const hh = tr.id === it.tr.id ? h : await history(tr, tmdbId);
-    if (hh.length >= 100 || !hh.every(x => x.pub > 0 && x.pub >= now - 3 * DAY)) return false;
+    if (hh.length >= 100) return 'historique de ' + tr.name + ' incomplet (' + hh.length + ' résultats)';
+    const old = hh.find(x => !(x.pub > 0) || x.pub < now - 3 * DAY);
+    if (old) return 'un torrent de ce film existe déjà sur ' + tr.name + ' depuis plus de 3 jours (' + (old.pub > 0 ? fmt(old.pub) : 'date inconnue') + ')';
   }
-  return true;
+  return null;
 }
-// VF/VFF : premier torrent de cette langue (aucun torrent de la langue depuis plus de 3 jours)
+// VF/VFF : premier torrent de cette langue (aucun torrent de la langue depuis plus de 3 jours). null si valide.
 async function firstOfLang(env, it, orig, tmdbId, now) {
   const all = new Map();
   for (const tr of env.trackers) {
     const h = await history(tr, tmdbId);
-    if (h.length >= 100) return false; // historique tronqué : au moindre doute, non
+    if (h.length >= 100) return 'historique de ' + tr.name + ' incomplet (' + h.length + ' résultats)'; // au moindre doute, non
     for (const x of h) all.set(x.hash, x);
   }
   if (!all.has(it.hash)) all.set(it.hash, it);
   for (const x of all.values()) {
     if (!langOk(env.l, parseRelease(x.title), orig, 'movie')) continue;
-    if (!(x.pub > 0) || x.pub < now - 3 * DAY) return false;
+    if (!(x.pub > 0) || x.pub < now - 3 * DAY) return 'un torrent dans cette langue existe déjà depuis plus de 3 jours (' + (x.pub > 0 ? fmt(x.pub) : 'date inconnue') + ')';
   }
-  return true;
+  return null;
 }
 
 async function evalMovie(env, it, rel) {
-  const now = Date.now();
+  const now = Date.now(), R = env.rules || R0;
   const id = await resolveTmdb(env, it, rel, 'movie');
   if (!id) return rej('titre TMDB introuvable');
   const d = await tmdb(env, '/movie/' + id, { append_to_response: 'release_dates,external_ids' });
@@ -302,19 +320,26 @@ async function evalMovie(env, it, rel) {
   let date, dateLabel = 'Sortie le';
   if (env.l === 'all') {
     const dig = minOf(relDate(d, ['FR', 'US', 'CA'], [4, 5]), (await dvds()).get(imdb)); // la plus ancienne de toutes
-    if (dig != null) {
-      if (now - dig > 7 * DAY) return rej('sortie numérique trop ancienne');
-      date = dig; // une date future passe aussi
-    } else if (await premierTorrent(env, it, rel, d, id, cinema, now)) {
+    if (dig != null && now - dig <= R.digitalDays * DAY) date = dig; // une date future passe aussi
+    else if (dig != null) { // sortie numérique ancienne : accepté seulement si c'est le premier torrent d'un film récent
+      const why = R.movieFirstTorrent ? await premierTorrent(env, it, rel, d, id, cinema, now, false) : 'option « premier torrent » désactivée';
+      if (why) return rej('sortie numérique le ' + fmt(dig) + ' (il y a ' + daysAgo(dig) + ' j, au-delà de ' + R.digitalDays + ' j) ; premier torrent refusé : ' + why);
       date = it.pub > 0 ? it.pub : now; dateLabel = 'Torrent du';
-    } else return rej('aucune date numérique et pas un premier torrent');
+    } else {
+      const why = await premierTorrent(env, it, rel, d, id, cinema, now, true);
+      if (why) return rej('aucune date numérique connue ; premier torrent refusé : ' + why);
+      date = it.pub > 0 ? it.pub : now; dateLabel = 'Torrent du';
+    }
   } else {
     const ld = relDate(d, env.l === 'vf' ? ['FR', 'CA'] : ['FR'], [4, 5]);
-    if (ld != null && now - ld <= 7 * DAY) date = ld;
+    if (ld != null && now - ld <= R.digitalDays * DAY) date = ld;
     else {
+      const lab = env.l === 'vf' ? 'FR/CA' : 'FR';
+      const base = ld != null ? 'sortie numérique ' + lab + ' le ' + fmt(ld) + ' (il y a ' + daysAgo(ld) + ' j)' : 'aucune sortie numérique ' + lab + ' connue';
       const lim = new Date(now); lim.setMonth(lim.getMonth() - 8);
-      if (cinema == null || cinema > now || cinema < lim.getTime()) return rej('sortie cinéma hors fenêtre de 8 mois');
-      if (!(await firstOfLang(env, it, d.original_language, id, now))) return rej('pas le premier torrent de cette langue');
+      if (cinema == null || cinema > now || cinema < lim.getTime()) return rej(base + ' ; sortie cinéma ' + (cinema == null ? 'inconnue' : 'le ' + fmt(cinema)) + ' hors fenêtre de 8 mois');
+      const why = await firstOfLang(env, it, d.original_language, id, now);
+      if (why) return rej(base + ' ; premier torrent de cette langue refusé : ' + why);
       date = it.pub > 0 ? it.pub : now; dateLabel = 'Torrent du';
     }
   }
@@ -327,7 +352,7 @@ async function evalMovie(env, it, rel) {
 }
 
 async function evalSeries(env, it, rel) {
-  const now = Date.now();
+  const now = Date.now(), R = env.rules || R0;
   if (rel.season == null) return rej('pas de numéro de saison');
   const id = await resolveTmdb(env, it, rel, 'series');
   if (!id) return rej('série TMDB introuvable');
@@ -340,15 +365,15 @@ async function evalSeries(env, it, rel) {
   if (rel.episode != null) {
     const e = await tmdb(env, `/tv/${id}/season/${rel.season}/episode/${rel.episode}`);
     const air = e && Date.parse(e.air_date);
-    if (!air) return rej("date de diffusion de l'épisode inconnue");
-    if (now - air > 48 * HOUR) return rej('épisode diffusé il y a plus de 48 h');
+    if (!air) return rej("date de diffusion de l'épisode inconnue sur TMDB");
+    if (now - air > R.episodeHours * HOUR) return rej('épisode diffusé le ' + fmt(air) + ' (il y a ' + Math.round((now - air) / HOUR) + ' h, au-delà de ' + R.episodeHours + ' h)');
     date = air; label = 'S' + String(rel.season).padStart(2, '0') + 'E' + String(rel.episode).padStart(2, '0');
   } else {
     const s = await tmdb(env, `/tv/${id}/season/${rel.season}`);
     const aired = ((s && s.episodes) || []).map(x => Date.parse(x.air_date)).filter(t => t && t <= now);
-    if (!aired.length) return rej('aucun épisode diffusé dans la saison');
+    if (!aired.length) return rej('aucun épisode diffusé dans cette saison sur TMDB');
     date = Math.max(...aired);
-    if (now - date > 7 * DAY) return rej('dernier épisode de la saison trop ancien');
+    if (now - date > R.seasonDays * DAY) return rej('dernier épisode de la saison diffusé le ' + fmt(date) + ' (il y a ' + daysAgo(date) + ' j, au-delà de ' + R.seasonDays + ' j)');
     label = 'Saison ' + rel.season + ' complète';
   }
   const anime = (d.genres || []).some(g => g.id === 16) && (d.original_language === 'ja' || (d.origin_country || []).includes('JP'));
@@ -358,6 +383,32 @@ async function evalSeries(env, it, rel) {
     ts: Math.min(now, it.pub > 0 ? it.pub : now), date, season: rel.season, episode: rel.episode,
     desc: [label, 'diffusé le ' + fmt(date), rel.label].filter(Boolean).join(' · '),
   } };
+}
+
+// Résumé des dates TMDB d'un titre (outil de diagnostic)
+async function describe(env, it, rel, kind) {
+  const id = await resolveTmdb(env, it, rel, kind);
+  if (!id) return { error: 'titre introuvable sur TMDB' };
+  const f = t => t == null ? '—' : fmt(t);
+  if (kind === 'movie') {
+    const d = await tmdb(env, '/movie/' + id, { append_to_response: 'release_dates,external_ids' });
+    if (!d) return { error: 'film introuvable sur TMDB' };
+    const imdb = d.imdb_id || (d.external_ids && d.external_ids.imdb_id);
+    const dv = imdb ? (await dvds()).get(imdb) : null;
+    return { tmdbId: id, title: d.title, year: (d.release_date || '').slice(0, 4), imdb: imdb || null, lines: [
+      ['Sortie principale', d.release_date ? f(Date.parse(d.release_date)) : '—'], ['Cinéma (FR/US/CA)', f(relDate(d, ['FR', 'US', 'CA'], [2, 3]))],
+      ['Numérique FR', f(relDate(d, ['FR'], [4]))], ['Numérique US', f(relDate(d, ['US'], [4]))], ['Numérique CA', f(relDate(d, ['CA'], [4]))],
+      ['Physique FR/US/CA', f(relDate(d, ['FR', 'US', 'CA'], [5]))], ['dvdsreleasedates (US)', f(dv)],
+    ] };
+  }
+  const d = await tmdb(env, '/tv/' + id, { append_to_response: 'external_ids' });
+  if (!d) return { error: 'série introuvable sur TMDB' };
+  const lines = [['Première diffusion', d.first_air_date ? f(Date.parse(d.first_air_date)) : '—']];
+  if (rel.season != null && rel.episode != null) {
+    const e = await tmdb(env, `/tv/${id}/season/${rel.season}/episode/${rel.episode}`);
+    lines.push(['Épisode S' + String(rel.season).padStart(2, '0') + 'E' + String(rel.episode).padStart(2, '0') + ' diffusé le', e && e.air_date ? f(Date.parse(e.air_date)) : '—']);
+  }
+  return { tmdbId: id, title: d.name, year: (d.first_air_date || '').slice(0, 4), imdb: (d.external_ids && d.external_ids.imdb_id) || null, lines };
 }
 
 /* ------------------------------------------------------------------ cycle de mise à jour (borné dans le temps) */
@@ -397,7 +448,8 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
     for (const x of list) if (!uniq.has(x.hash)) uniq.set(x.hash, x); // même infohash sur 2 trackers : traité une fois
     const todo = [...uniq.values()].filter(x => LANGS.some(l => !langs[l].seen[seenKey(x.hash)])).sort((a, b) => (b.pub || 0) - (a.pub || 0)); // les plus récents d'abord
     const stats = Object.fromEntries(LANGS.map(l => [l, { neuf: 0, ok: 0, ko: 0, err: 0 }]));
-    const envs = Object.fromEntries(LANGS.map(l => [l, { l, m: cfg.tmdbKey, trackers }]));
+    const rules = rulesOf(cfg);
+    const envs = Object.fromEntries(LANGS.map(l => [l, { l, m: cfg.tmdbKey, trackers, rules }]));
     let postponed = 0;
     const journal = []; // décisions de ce cycle (affichées dans l'onglet Journal)
     await pool(3, todo, async it => {
@@ -418,7 +470,7 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
     const now = Date.now();
     for (const l of LANGS) {
       const st = langs[l];
-      st.items = st.items.filter(x => x.ts > now - KEEP_MS);
+      st.items = st.items.filter(x => x.ts > now - cfg.keepDays * DAY);
       for (const [h, m] of Object.entries(st.seen)) if (m * 60000 < now - SEEN_KEEP_MS) delete st.seen[h];
       await kv.set(KEY.items(l), st.items);
       await kv.set(KEY.seen(l), st.seen);
@@ -459,6 +511,11 @@ function buildManifest(lang, streamInfo) {
 const shortDate = t => new Date(t).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit' });
 function displayName(x, format) { // titre affiché sous l'affiche dans Stremio
   if (format === 'plain') return x.name;
+  if (format === 'date_only') { // sans le titre : l'affiche suffit
+    const d = x.date ? shortDate(x.date) : '';
+    if (x.type === 'series') return [String(x.desc || '').split(' · ')[0], d].filter(Boolean).join(' · ') || x.name;
+    return d ? (String(x.desc || '').startsWith('Torrent') ? 'Torrent du ' : 'Sortie le ') + d : x.name;
+  }
   const label = x.type === 'series' ? String(x.desc || '').split(' · ')[0] : '';
   const date = format === 'episode_date' && x.date ? shortDate(x.date) : '';
   const extra = [label, date].filter(Boolean).join(' · ');
@@ -508,15 +565,25 @@ const core = {
   LANG_NAMES,
   async getState() {
     const cfg = await getConfig(true), run = (await kv.get(KEY.run)) || {}, counts = {};
+    let latestAll = [];
     for (const l of LANGS) {
       const it = (await kv.get(KEY.items(l))) || [];
+      if (l === 'all') latestAll = it;
       counts[l] = { movies: it.filter(x => x.type === 'movie').length, series: it.filter(x => x.type === 'series' && !x.anime).length, anime: it.filter(x => x.anime).length };
     }
+    const activity = []; // titres validés par jour (version « Toutes »), 14 derniers jours
+    for (let i = 13; i >= 0; i--) {
+      const t0 = new Date(); t0.setUTCHours(0, 0, 0, 0); const a = t0.getTime() - i * DAY;
+      activity.push({ d: new Date(a).toLocaleDateString('fr-FR', { timeZone: 'UTC', day: '2-digit', month: '2-digit' }), n: latestAll.filter(x => x.ts >= a && x.ts < a + DAY).length });
+    }
+    const autoAt = +(await kv.get(KEY.auto)) || 0;
     return {
       langs: LANG_NAMES,
       trackers: cfg.trackers.map(t => ({ id: t.id, name: t.name, url: t.url, keyHint: mask(t.apikey), enabled: t.enabled, status: (run.trackerStatus || {})[t.id] || null })),
       tmdb: { set: !!cfg.tmdbKey, hint: mask(cfg.tmdbKey) },
-      settings: { streamInfo: cfg.streamInfo, autoRefreshMin: cfg.autoRefreshMin, titleFormat: cfg.titleFormat },
+      settings: { streamInfo: cfg.streamInfo, autoRefreshMin: cfg.autoRefreshMin, titleFormat: cfg.titleFormat, movieFirstTorrent: cfg.movieFirstTorrent, digitalDays: cfg.digitalDays, episodeHours: cfg.episodeHours, seasonDays: cfg.seasonDays, keepDays: cfg.keepDays },
+      latest: latestAll.slice(0, 8).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, desc: x.desc, ts: x.ts, poster: x.poster })),
+      activity, autoNext: autoAt && cfg.autoRefreshMin ? autoAt + cfg.autoRefreshMin * 60000 : null,
       run: { busy: !!(await kv.get(KEY.lock)), last: run.last || 0, ms: run.ms || 0, stats: run.stats || {}, postponed: run.postponed || 0, budgetS: CYCLE_BUDGET_MS / 1000 },
       counts, dvds: run.dvds || 0, dvdsOn: DVDS_ON,
     };
@@ -549,8 +616,12 @@ const core = {
   async setSettings(o) {
     const c = await getConfig(true);
     if ('streamInfo' in o) c.streamInfo = !!o.streamInfo;
-    if ('autoRefreshMin' in o) { const n = +o.autoRefreshMin; if (![0, 15, 30, 60, 120, 360].includes(n)) throw new Error('Valeur invalide'); c.autoRefreshMin = n; await kv.del(KEY.auto); }
-    if ('titleFormat' in o) { if (!['plain', 'episode', 'episode_date'].includes(o.titleFormat)) throw new Error('Format invalide'); c.titleFormat = o.titleFormat; }
+    if ('movieFirstTorrent' in o) c.movieFirstTorrent = !!o.movieFirstTorrent;
+    for (const k of Object.keys(LISTS)) if (k in o) {
+      const n = +o[k]; if (!LISTS[k].includes(n)) throw new Error('Valeur invalide (' + k + ')');
+      c[k] = n; if (k === 'autoRefreshMin') await kv.del(KEY.auto);
+    }
+    if ('titleFormat' in o) { if (!TITLE_FORMATS.includes(o.titleFormat)) throw new Error('Format invalide'); c.titleFormat = o.titleFormat; }
     await saveConfig(c);
   },
   async removeItem(id, type) { // retire un titre de tous les catalogues
@@ -560,6 +631,35 @@ const core = {
       if (keep.length !== items.length) { n++; await kv.set(KEY.items(l), keep); }
     }
     if (!n) throw new Error('Titre introuvable');
+  },
+  async explain(q) { // cherche une release sur les trackers et explique la décision pour chaque version
+    q = String(q || '').trim();
+    if (q.length < 2) throw new Error('Saisissez au moins 2 caractères');
+    const cfg = await getConfig(true), trackers = cfg.trackers.filter(t => t.enabled);
+    if (!cfg.tmdbKey) throw new Error('Clé TMDB manquante');
+    if (!trackers.length) throw new Error('Aucun tracker actif');
+    const errors = [], found = new Map();
+    for (const tr of trackers) {
+      try { for (const x of parseTorznab(await trackerGet(tzUrl(tr, { t: 'search', q, limit: 20 })))) if (!found.has(x.hash)) found.set(x.hash, { ...x, tr }); }
+      catch (e) { errors.push(tr.name + ' : ' + e.message); }
+    }
+    const list = [...found.values()].sort((a, b) => (b.pub || 0) - (a.pub || 0)).slice(0, 4);
+    const rules = rulesOf(cfg), results = [];
+    for (const it of list) {
+      const rel = parseRelease(it.title);
+      it.kind = it.cats.some(c => c >= 5000 && c < 6000) || rel.episode != null || (rel.season != null && !it.cats.some(c => c >= 2000 && c < 3000)) ? 'series' : 'movie';
+      const row = { title: it.title, tracker: it.tr.name, pub: it.pub || null, kind: it.kind, cats: it.cats, tmdbid: it.tmdbid || null, info: null, verdicts: {} };
+      try { row.info = await describe({ l: 'all', m: cfg.tmdbKey, trackers, rules }, it, rel, it.kind); } catch (e) { row.info = { error: e.message }; }
+      for (const lang of LANGS) {
+        try {
+          const env = { l: lang, m: cfg.tmdbKey, trackers, rules };
+          const r = it.kind === 'series' ? await evalSeries(env, it, rel) : await evalMovie(env, it, rel);
+          row.verdicts[lang] = r.entry ? { ok: true, text: r.entry.name + ' — ' + r.entry.desc } : { ok: false, text: r.reason };
+        } catch (e) { row.verdicts[lang] = { ok: false, err: true, text: 'Erreur : ' + e.message }; }
+      }
+      results.push(row);
+    }
+    return { query: q, errors, total: found.size, results };
   },
   async getLog() { return (await kv.get(KEY.log)) || []; },
   async clearLog() { await kv.del(KEY.log); },
