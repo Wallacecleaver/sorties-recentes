@@ -293,6 +293,14 @@ details[open] summary{margin-bottom:12px}
         <div id="latest"></div>
       </div>
 
+      <div class="section" id="freshSec">
+        <div class="section-header">
+          <div class="section-title"><span data-icon="clock"></span>Nouveaux torrents<span class="section-count" id="freshCount"></span></div>
+          <div class="section-buttons"><button class="btn btn-ghost btn-small" id="freshGo">Voir tout</button></div>
+        </div>
+        <div id="fresh"></div>
+      </div>
+
       <div class="cols">
         <div class="section">
           <div class="section-header"><div class="section-title"><span data-icon="layers"></span>Versions du catalogue</div></div>
@@ -330,7 +338,7 @@ details[open] summary{margin-bottom:12px}
       <div class="section">
         <div class="section-header">
           <div class="section-title"><span data-icon="film"></span>Contenu des catalogues<span class="section-count" id="catCount"></span></div>
-          <div class="seg" id="catLang"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><div class="seg" id="catSrc"><button data-s="valid">Sorties validées</button><button data-s="new">Nouveaux torrents</button></div><div class="seg" id="catLang"></div></div>
         </div>
         <div class="filters">
           <div class="seg" id="catType">
@@ -416,6 +424,30 @@ details[open] summary{margin-bottom:12px}
               <div><div class="t">Ligne d'info dans les flux</div>
                 <div class="d" style="margin-bottom:0">Affiche « 🆕 Sortie récente » avec l'épisode, la date et la version en haut de la liste des flux d'un titre du catalogue (ce n'est pas un flux lisible). <b>Après changement, désinstallez puis réinstallez l'addon dans Stremio.</b></div></div>
               <label class="switch"><input type="checkbox" id="optStream"><span></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Nouveaux torrents</div></div>
+        <div class="section-body">
+          <div class="opt-block">
+            <div class="setting-row">
+              <div><div class="t">Catalogues « Nouveaux torrents »</div>
+                <div class="d" style="margin-bottom:0">Ajoute deux catalogues dans Stremio (films et séries) avec tout ce qui vient d'être mis en ligne sur vos trackers, sans appliquer les règles de date : un titre y apparaît dès qu'il est identifié sur TMDB. <b>Après changement, désinstallez puis réinstallez l'addon dans Stremio.</b></div></div>
+              <label class="switch"><input type="checkbox" id="optNew"><span></span></label>
+            </div>
+          </div>
+          <div class="opt-block">
+            <div class="t">Période affichée</div>
+            <div class="d">Un torrent reste dans ces catalogues pendant ce délai après sa mise en ligne.</div>
+            <select class="form-input" id="optNewHours"><option value="12">12 heures</option><option value="24">24 heures (aujourd'hui)</option><option value="48">48 heures</option><option value="72">72 heures</option><option value="168">7 jours</option></select>
+          </div>
+          <div class="opt-block">
+            <div class="setting-row">
+              <div><div class="t">Masquer les CAM / TS / TELESYNC</div><div class="d" style="margin-bottom:0">Ignore les releases de mauvaise qualité enregistrées en salle.</div></div>
+              <label class="switch"><input type="checkbox" id="optCam"><span></span></label>
             </div>
           </div>
         </div>
@@ -685,6 +717,14 @@ function renderDashboard() {
     h('div', { class: 'pc-body' }, h('div', { class: 'pc-name' }, i.name), h('div', { class: 'pc-desc' }, i.desc), h('div', { class: 'pc-desc' }, ago(i.ts)))))) :
     h('div', { class: 'empty' }, 'Aucun titre pour le moment. Lancez un cycle ou ouvrez Stremio : la mise à jour se fait toute seule.'));
 
+  // nouveaux torrents
+  $('#freshSec').hidden = !st.newTorrents;
+  $('#freshCount').textContent = S.newCount ? S.newCount + ' titre(s) · dernières ' + (st.newHours >= 168 ? '7 jours' : st.newHours + ' h') : '';
+  $('#fresh').replaceChildren(S.newest && S.newest.length ? h('div', { class: 'latest-grid' }, S.newest.map(i => h('div', { class: 'poster-card' },
+    i.poster ? h('img', { src: i.poster, alt: '', loading: 'lazy' }) : h('div', { class: 'noimg' }, icon('film')),
+    h('div', { class: 'pc-body' }, h('div', { class: 'pc-name' }, i.name), h('div', { class: 'pc-desc' }, i.desc), h('div', { class: 'pc-desc' }, ago(i.ts)))))) :
+    h('div', { class: 'empty' }, 'Aucun nouveau torrent identifié pour le moment. Ils apparaissent après un cycle.'));
+
   // versions
   $('#langRows').replaceChildren(...Object.keys(S.langs).map(l => {
     const k = S.counts[l] || { movies: 0, series: 0, anime: 0 }, s = r.stats[l];
@@ -724,6 +764,7 @@ function renderDashboard() {
   $('#alertsBody').replaceChildren(...al.map(([tone, t, d]) => h('div', { style: 'display:flex;gap:12px;align-items:flex-start;padding:6px 0' }, h('span', { class: 'badge ' + tone }, tone === 'danger' ? 'Action' : 'Info'), h('div', {}, h('b', {}, t), h('div', { class: 'hint', style: 'margin-top:2px' }, d)))));
 }
 
+$('#freshGo').onclick = () => { CAT.src = 'new'; CAT.lang = 'all'; goto('catalog'); };
 $('#runBtn').onclick = guard(async () => {
   const b = $('#runBtn'); b.disabled = true; b.firstChild.classList.add('spin');
   toast('info', 'Cycle lancé', 'Jusqu\'à ' + S.run.budgetS + ' s — ne fermez pas la page.');
@@ -779,11 +820,12 @@ $('#trSave').onclick = guard(async () => {
 });
 
 /* ---------- Catalogues ---------- */
-let CAT = { lang: 'all', type: 'all', q: '', items: [] };
+let CAT = { lang: 'all', type: 'all', q: '', src: 'valid', items: [] };
 async function loadCatalog() {
   if (!S) return;
   $('#catLang').replaceChildren(...Object.keys(S.langs).map(l => h('button', { class: l === CAT.lang ? 'active' : '', onclick: () => { CAT.lang = l; loadCatalog(); } }, S.langs[l])));
-  try { CAT.items = await api('GET', '/catalog/' + CAT.lang); } catch (e) { toast('error', 'Erreur', e.message); return; }
+  document.querySelectorAll('#catSrc button').forEach(b => b.classList.toggle('active', b.dataset.s === CAT.src));
+  try { CAT.items = await api('GET', '/catalog/' + CAT.lang + (CAT.src === 'new' ? '/new' : '')); } catch (e) { toast('error', 'Erreur', e.message); return; }
   renderCatalog();
 }
 function renderCatalog() {
@@ -799,8 +841,9 @@ function renderCatalog() {
       h('td', {}, h('div', { class: 'row-actions' }, h('button', { class: 'btn-icon danger', title: 'Retirer des catalogues', onclick: guard(async () => {
         if (!(await confirmBox({ title: 'Retirer ce titre ?', message: '« ' + i.name + ' » sera retiré des 3 versions du catalogue. Il ne reviendra que si un nouveau torrent est validé.', yes: 'Retirer' }))) return;
         await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadCatalog(); await load(false);
-      }) }, icon('trash')))))))) : h('div', { class: 'empty' }, CAT.items.length ? 'Aucun résultat pour ce filtre.' : 'Catalogue vide pour le moment. Lancez un cycle depuis le tableau de bord.'));
+      }) }, icon('trash')))))))) : h('div', { class: 'empty' }, CAT.items.length ? 'Aucun résultat pour ce filtre.' : CAT.src === 'new' ? 'Aucun nouveau torrent pour le moment.' : 'Catalogue vide pour le moment. Lancez un cycle depuis le tableau de bord.'));
 }
+$('#catSrc').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { CAT.src = b.dataset.s; loadCatalog(); } });
 $('#catType').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; CAT.type = b.dataset.t; document.querySelectorAll('#catType button').forEach(x => x.classList.toggle('active', x === b)); renderCatalog(); });
 $('#catSearch').addEventListener('input', e => { CAT.q = e.target.value; renderCatalog(); });
 
@@ -874,6 +917,7 @@ function renderSettings() {
   document.querySelectorAll('#optTitle button').forEach(b => b.classList.toggle('active', b.dataset.f === st.titleFormat));
   $('#titleExample').textContent = titleExample(st.titleFormat);
   $('#optAuto').value = String(st.autoRefreshMin); renderAutoBadge();
+  $('#optNew').checked = st.newTorrents; $('#optNewHours').value = String(st.newHours); $('#optCam').checked = st.newHideCam;
   $('#optFirst').checked = st.movieFirstTorrent;
   $('#optDigital').value = String(st.digitalDays); $('#optEpisode').value = String(st.episodeHours);
   $('#optSeason').value = String(st.seasonDays); $('#optKeep').value = String(st.keepDays);
@@ -893,6 +937,9 @@ $('#optTitle').addEventListener('click', guard(async e => {
 }));
 $('#optStream').onchange = guard(async () => saveSetting({ streamInfo: $('#optStream').checked }, 'Option enregistrée — réinstallez l\'addon dans Stremio pour l\'appliquer'));
 $('#optAuto').onchange = guard(async () => { await saveSetting({ autoRefreshMin: +$('#optAuto').value }, 'Fréquence enregistrée'); renderAutoBadge(); renderDashboard(); });
+$('#optNew').onchange = guard(async () => { await saveSetting({ newTorrents: $('#optNew').checked }, 'Option enregistrée — réinstallez l\'addon dans Stremio pour voir les catalogues'); renderDashboard(); });
+$('#optNewHours').onchange = guard(async () => { await saveSetting({ newHours: +$('#optNewHours').value }, 'Période enregistrée'); renderDashboard(); });
+$('#optCam').onchange = guard(async () => saveSetting({ newHideCam: $('#optCam').checked }, 'Option enregistrée'));
 $('#optFirst').onchange = guard(async () => saveSetting({ movieFirstTorrent: $('#optFirst').checked }, 'Règle enregistrée — utilisez « Retraiter les rejetés » pour retester'));
 [['#optDigital', 'digitalDays'], ['#optEpisode', 'episodeHours'], ['#optSeason', 'seasonDays'], ['#optKeep', 'keepDays']].forEach(([sel, key]) => {
   $(sel).onchange = guard(async () => saveSetting({ [key]: +$(sel).value }, 'Règle enregistrée — utilisez « Retraiter les rejetés » pour retester'));

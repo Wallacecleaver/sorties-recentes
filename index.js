@@ -42,7 +42,7 @@ const MOVIE_CATS = '2000,2010,2030,2060,2070,2080,2090';
 const SERIES_CATS = '5000,5070,5080';
 const LANGS = ['all', 'vf', 'vff'];
 const LANG_NAMES = { all: 'Toutes les versions', vf: 'VF (VFQ incluse)', vff: 'VFF / VF2 uniquement' };
-const KEY = { config: 'sr:config', run: 'sr:run', lock: 'sr:lock', dvds: 'sr:dvds', log: 'sr:log', auto: 'sr:auto', items: l => 'sr:items:' + l, seen: l => 'sr:seen:' + l };
+const KEY = { config: 'sr:config', run: 'sr:run', lock: 'sr:lock', dvds: 'sr:dvds', log: 'sr:log', auto: 'sr:auto', new: l => 'sr:new:' + l, newseen: 'sr:newseen', items: l => 'sr:items:' + l, seen: l => 'sr:seen:' + l };
 
 const log = (...a) => console.log(...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -51,7 +51,7 @@ const seenKey = h => h.slice(0, 20); // clé compacte pour rester loin de la lim
 
 /* ------------------------------------------------------------------ configuration (dashboard) */
 const TITLE_FORMATS = ['plain', 'episode', 'episode_date', 'date_only'];
-const LISTS = { autoRefreshMin: [0, 15, 30, 60, 120, 360], digitalDays: [3, 7, 14, 30], episodeHours: [24, 48, 72, 168], seasonDays: [3, 7, 14], keepDays: [7, 14, 30, 60] };
+const LISTS = { autoRefreshMin: [0, 15, 30, 60, 120, 360], digitalDays: [3, 7, 14, 30], episodeHours: [24, 48, 72, 168], seasonDays: [3, 7, 14], keepDays: [7, 14, 30, 60], newHours: [12, 24, 48, 72, 168] };
 const pick = (list, v, def) => list.includes(+v) ? +v : def;
 let cfgCache = null, cfgAt = 0;
 async function getConfig(force) {
@@ -64,6 +64,8 @@ async function getConfig(force) {
     movieFirstTorrent: c.movieFirstTorrent === undefined ? true : !!c.movieFirstTorrent,
     digitalDays: pick(LISTS.digitalDays, c.digitalDays, 7), episodeHours: pick(LISTS.episodeHours, c.episodeHours, 48),
     seasonDays: pick(LISTS.seasonDays, c.seasonDays, 7), keepDays: pick(LISTS.keepDays, c.keepDays, 30),
+    newTorrents: c.newTorrents === undefined ? true : !!c.newTorrents, // catalogues « Nouveaux torrents »
+    newHours: pick(LISTS.newHours, c.newHours, 24), newHideCam: c.newHideCam === undefined ? true : !!c.newHideCam,
   };
   cfgAt = Date.now();
   return cfgCache;
@@ -181,13 +183,14 @@ function parseRelease(raw) {
   for (const m of s.matchAll(new RegExp(LANG_RE.source, 'gi'))) tags.add(m[1].toUpperCase());
   const web = /(?<![A-Za-z0-9])(WEB|WEB[-.]?DL|WEB[-.]?RIP|BLU[-.]?RAY|BDRIP|BRRIP|REMUX)(?![A-Za-z0-9])/i.test(s);
   const bad = /(?<![A-Za-z0-9])(HDTV|CAM|HDCAM|TS|TC|TELESYNC|TELECINE)(?![A-Za-z0-9])/i.test(s);
+  const cam = /(?<![A-Za-z0-9])(CAM|HDCAM|TS|TC|TELESYNC|TELECINE)(?![A-Za-z0-9])/i.test(s);
   return {
     name, year, tags,
     season: ep ? +ep[1] : se ? +se[1] : null,
     episode: ep ? +ep[2] : null,
     isVF: ANY_VF.some(t => tags.has(t)),
     strictVFF: STRICT_VFF.some(t => tags.has(t)),
-    webOrBd: web && !bad,
+    webOrBd: web && !bad, cam,
     label: TAG_ORDER.filter(t => tags.has(t)).join(' '),
   };
 }
@@ -411,6 +414,42 @@ async function describe(env, it, rel, kind) {
   return { tmdbId: id, title: d.name, year: (d.first_air_date || '').slice(0, 4), imdb: (d.external_ids && d.external_ids.imdb_id) || null, lines };
 }
 
+/* ------------------------------------------------------------------ « Nouveaux torrents » (sans règle de date) */
+function qualityOf(t) {
+  const r = (t.match(/(?<![A-Za-z0-9])(2160p|4K|UHD|1080p|720p|480p)(?![A-Za-z0-9])/i) || [])[1];
+  const q = (t.match(/(?<![A-Za-z0-9])(REMUX|BLU[-.]?RAY|BDRIP|WEB[-.]?DL|WEB[-.]?RIP|WEB|HDTV|HDCAM|CAM|TELESYNC|TS|TC)(?![A-Za-z0-9])/i) || [])[1];
+  return [r ? (/p$/i.test(r) ? r.toLowerCase() : r.toUpperCase()) : '', q ? q.toUpperCase().replace('.', '-') : ''].filter(Boolean).join(' ');
+}
+// Un torrent posté récemment devient une entrée du catalogue « Nouveaux torrents » : seule l'identification TMDB compte.
+async function buildNew(env, it, rel) {
+  if (it.kind === 'series' && rel.season == null) return null;
+  const id = await resolveTmdb(env, it, rel, it.kind);
+  if (!id) return null;
+  const when = new Date(it.pub).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+  const tail = [qualityOf(it.title), rel.label].filter(Boolean);
+  if (it.kind === 'movie') {
+    const d = await tmdb(env, '/movie/' + id, { append_to_response: 'external_ids' });
+    const imdb = d && (d.imdb_id || (d.external_ids && d.external_ids.imdb_id));
+    if (!imdb) return null;
+    return { orig: d.original_language, entry: { id: imdb, type: 'movie', anime: false, name: d.title || d.original_title || rel.name,
+      poster: d.poster_path ? IMG + d.poster_path : undefined, year: (d.release_date || '').slice(0, 4), ts: it.pub, date: it.pub,
+      desc: ['Torrent du ' + when, ...tail].join(' · ') } };
+  }
+  const d = await tmdb(env, '/tv/' + id, { append_to_response: 'external_ids' });
+  const imdb = d && d.external_ids && d.external_ids.imdb_id;
+  if (!imdb) return null;
+  const label = rel.episode != null ? 'S' + String(rel.season).padStart(2, '0') + 'E' + String(rel.episode).padStart(2, '0') : 'Saison ' + rel.season + ' complète';
+  const anime = (d.genres || []).some(g => g.id === 16) && (d.original_language === 'ja' || (d.origin_country || []).includes('JP'));
+  return { orig: d.original_language, entry: { id: imdb, type: 'series', anime, name: d.name || d.original_name || rel.name,
+    poster: d.poster_path ? IMG + d.poster_path : undefined, year: (d.first_air_date || '').slice(0, 4), ts: it.pub, date: it.pub,
+    season: rel.season, episode: rel.episode, desc: [label, 'torrent du ' + when, ...tail].join(' · ') } };
+}
+function addNew(list, e) { // un titre n'apparaît qu'une fois (le torrent le plus récent l'emporte)
+  const i = list.findIndex(x => x.id === e.id && x.type === e.type);
+  if (i >= 0) { if (list[i].ts >= e.ts) return; list.splice(i, 1); }
+  list.push(e); list.sort((a, b) => b.ts - a.ts);
+}
+
 /* ------------------------------------------------------------------ cycle de mise à jour (borné dans le temps) */
 function addEntry(st, e) {
   const i = st.items.findIndex(x => x.id === e.id && x.type === e.type);
@@ -446,7 +485,10 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
     for (const l of LANGS) langs[l] = { items: (await kv.get(KEY.items(l))) || [], seen: (await kv.get(KEY.seen(l))) || {} };
     const uniq = new Map();
     for (const x of list) if (!uniq.has(x.hash)) uniq.set(x.hash, x); // même infohash sur 2 trackers : traité une fois
-    const todo = [...uniq.values()].filter(x => LANGS.some(l => !langs[l].seen[seenKey(x.hash)])).sort((a, b) => (b.pub || 0) - (a.pub || 0)); // les plus récents d'abord
+    const newWin = cfg.newHours * HOUR, newLists = {}, newSeen = cfg.newTorrents ? (await kv.get(KEY.newseen)) || {} : {};
+    for (const l of LANGS) newLists[l] = cfg.newTorrents ? (await kv.get(KEY.new(l))) || [] : [];
+    const needsNew = x => cfg.newTorrents && x.pub > 0 && Date.now() - x.pub <= newWin && !newSeen[seenKey(x.hash)];
+    const todo = [...uniq.values()].filter(x => needsNew(x) || LANGS.some(l => !langs[l].seen[seenKey(x.hash)])).sort((a, b) => (b.pub || 0) - (a.pub || 0)); // les plus récents d'abord
     const stats = Object.fromEntries(LANGS.map(l => [l, { neuf: 0, ok: 0, ko: 0, err: 0 }]));
     const rules = rulesOf(cfg);
     const envs = Object.fromEntries(LANGS.map(l => [l, { l, m: cfg.tmdbKey, trackers, rules }]));
@@ -466,6 +508,14 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
           else { stats[lang].ko++; if (lang === 'all') journal.push({ t: Date.now(), lang, title: it.title, kind: 'ko', reason: r.reason, tr: it.tr.name }); if (process.env.DEBUG) log(`[${lang}] - ${it.title} : ${r.reason}`); }
         } catch (e) { stats[lang].err++; journal.push({ t: Date.now(), lang, title: it.title, kind: 'err', reason: e.message, tr: it.tr.name }); log(`[${lang}] erreur transitoire, sera retenté : ${it.title} : ${e.message}`); }
       }
+      if (needsNew(it)) { // catalogue « Nouveaux torrents » : tout torrent posté récemment et identifiable
+        try {
+          const res = rel.cam && cfg.newHideCam ? null : await buildNew(envs.all, it, rel);
+          if (res) for (const l of LANGS) if (langOk(l, rel, res.orig, it.kind)) addNew(newLists[l], { ...res.entry });
+          newSeen[seenKey(it.hash)] = Math.floor(Date.now() / 60000);
+          stats.all.nouveaux = (stats.all.nouveaux || 0) + (res ? 1 : 0);
+        } catch (e) { log(`[nouveaux] erreur transitoire : ${it.title} : ${e.message}`); }
+      }
     });
     const now = Date.now();
     for (const l of LANGS) {
@@ -474,6 +524,11 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
       for (const [h, m] of Object.entries(st.seen)) if (m * 60000 < now - SEEN_KEEP_MS) delete st.seen[h];
       await kv.set(KEY.items(l), st.items);
       await kv.set(KEY.seen(l), st.seen);
+    }
+    if (cfg.newTorrents) {
+      for (const l of LANGS) { newLists[l] = newLists[l].filter(x => x.ts > now - newWin); await kv.set(KEY.new(l), newLists[l]); }
+      for (const [h, m] of Object.entries(newSeen)) if (m * 60000 < now - 3 * DAY) delete newSeen[h];
+      await kv.set(KEY.newseen, newSeen);
     }
     if (journal.length) { journal.sort((a, b) => b.t - a.t); await kv.set(KEY.log, journal.concat((await kv.get(KEY.log)) || []).slice(0, 400)); }
     Object.assign(run, { last: Date.now(), ms: Date.now() - t0, stats, postponed, dvds: dvdsCount });
@@ -493,13 +548,18 @@ const CATALOGS = [
   { type: 'series', id: 'sr-series', name: 'Séries récentes' },
   { type: 'series', id: 'sr-animes', name: 'Animés récents' },
 ];
-function buildManifest(lang, streamInfo) {
+const NEW_CATALOGS = [
+  { type: 'movie', id: 'sr-new-films', name: 'Nouveaux torrents · Films' },
+  { type: 'series', id: 'sr-new-series', name: 'Nouveaux torrents · Séries' },
+];
+function buildManifest(lang, cfg) {
+  const streamInfo = cfg.streamInfo;
   const m = {
     id: 'community.sorties.recentes', version: '3.0.0', name: 'Sorties récentes',
     description: 'Catalogues des films, séries et animés qui viennent de sortir en torrent — ' + LANG_NAMES[lang] + '.',
     resources: streamInfo ? ['catalog', 'stream'] : ['catalog'],
     types: ['movie', 'series'],
-    catalogs: CATALOGS.map(c => ({ ...c, extra: [{ name: 'skip' }] })),
+    catalogs: CATALOGS.concat(cfg.newTorrents ? NEW_CATALOGS : []).map(c => ({ ...c, extra: [{ name: 'skip' }] })),
     behaviorHints: { configurable: true },
   };
   if (streamInfo) m.idPrefixes = ['tt'];
@@ -522,23 +582,26 @@ function displayName(x, format) { // titre affiché sous l'affiche dans Stremio
   return extra ? x.name + ' · ' + extra : x.name;
 }
 async function catalog(lang, id, skip) {
-  const format = (await getConfig()).titleFormat;
-  const items = (await kv.get(KEY.items(lang))) || [];
-  const list = items.filter(x => id === 'sr-films' ? x.type === 'movie'
-    : id === 'sr-animes' ? x.type === 'series' && x.anime : x.type === 'series' && !x.anime);
+  const cfg = await getConfig(), format = cfg.titleFormat;
+  const fresh = id.startsWith('sr-new');
+  if (fresh && !cfg.newTorrents) return [];
+  const items = (await kv.get(fresh ? KEY.new(lang) : KEY.items(lang))) || [];
+  const list = fresh ? items.filter(x => x.ts > Date.now() - cfg.newHours * HOUR && (id === 'sr-new-films' ? x.type === 'movie' : x.type === 'series'))
+    : items.filter(x => id === 'sr-films' ? x.type === 'movie' : id === 'sr-animes' ? x.type === 'series' && x.anime : x.type === 'series' && !x.anime);
   return list.slice(skip, skip + PAGE).map(x => ({
     id: x.id, type: x.type, name: displayName(x, format), poster: x.poster, releaseInfo: x.year || undefined, description: x.desc,
   }));
 }
 async function streamsFor(lang, type, id) { // ligne d'information (option du dashboard) : ce n'est pas un flux lisible
   const [imdb, s, e] = id.split(':');
-  const en = ((await kv.get(KEY.items(lang))) || []).find(x => x.id === imdb && x.type === type);
+  let en = ((await kv.get(KEY.items(lang))) || []).find(x => x.id === imdb && x.type === type), nouveau = false;
+  if (!en) { en = ((await kv.get(KEY.new(lang))) || []).find(x => x.id === imdb && x.type === type); nouveau = true; }
   if (!en) return [];
   if (type === 'series') {
     if (en.season != null && s != null && +s !== en.season) return [];
     if (en.episode != null && e != null && +e !== en.episode) return [];
   }
-  return [{ name: '🆕 Sortie récente', description: en.desc, externalUrl: `stremio:///detail/${type}/${imdb}` }];
+  return [{ name: nouveau ? '⏱ Nouveau torrent' : '🆕 Sortie récente', description: en.desc, externalUrl: `stremio:///detail/${type}/${imdb}` }];
 }
 
 // Mise à jour automatique : quand Stremio charge un catalogue et que le dernier essai date de plus de N minutes
@@ -577,12 +640,14 @@ const core = {
       activity.push({ d: new Date(a).toLocaleDateString('fr-FR', { timeZone: 'UTC', day: '2-digit', month: '2-digit' }), n: latestAll.filter(x => x.ts >= a && x.ts < a + DAY).length });
     }
     const autoAt = +(await kv.get(KEY.auto)) || 0;
+    const newAll = cfg.newTorrents ? ((await kv.get(KEY.new('all'))) || []).filter(x => x.ts > Date.now() - cfg.newHours * HOUR) : [];
     return {
       langs: LANG_NAMES,
       trackers: cfg.trackers.map(t => ({ id: t.id, name: t.name, url: t.url, keyHint: mask(t.apikey), enabled: t.enabled, status: (run.trackerStatus || {})[t.id] || null })),
       tmdb: { set: !!cfg.tmdbKey, hint: mask(cfg.tmdbKey) },
-      settings: { streamInfo: cfg.streamInfo, autoRefreshMin: cfg.autoRefreshMin, titleFormat: cfg.titleFormat, movieFirstTorrent: cfg.movieFirstTorrent, digitalDays: cfg.digitalDays, episodeHours: cfg.episodeHours, seasonDays: cfg.seasonDays, keepDays: cfg.keepDays },
+      settings: { streamInfo: cfg.streamInfo, autoRefreshMin: cfg.autoRefreshMin, titleFormat: cfg.titleFormat, newTorrents: cfg.newTorrents, newHours: cfg.newHours, newHideCam: cfg.newHideCam, movieFirstTorrent: cfg.movieFirstTorrent, digitalDays: cfg.digitalDays, episodeHours: cfg.episodeHours, seasonDays: cfg.seasonDays, keepDays: cfg.keepDays },
       latest: latestAll.slice(0, 8).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, desc: x.desc, ts: x.ts, poster: x.poster })),
+      newest: newAll.slice(0, 8).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, desc: x.desc, ts: x.ts, poster: x.poster })), newCount: newAll.length,
       activity, autoNext: autoAt && cfg.autoRefreshMin ? autoAt + cfg.autoRefreshMin * 60000 : null,
       run: { busy: !!(await kv.get(KEY.lock)), last: run.last || 0, ms: run.ms || 0, stats: run.stats || {}, postponed: run.postponed || 0, budgetS: CYCLE_BUDGET_MS / 1000 },
       counts, dvds: run.dvds || 0, dvdsOn: DVDS_ON,
@@ -617,6 +682,8 @@ const core = {
     const c = await getConfig(true);
     if ('streamInfo' in o) c.streamInfo = !!o.streamInfo;
     if ('movieFirstTorrent' in o) c.movieFirstTorrent = !!o.movieFirstTorrent;
+    if ('newTorrents' in o) c.newTorrents = !!o.newTorrents;
+    if ('newHideCam' in o) c.newHideCam = !!o.newHideCam;
     for (const k of Object.keys(LISTS)) if (k in o) {
       const n = +o[k]; if (!LISTS[k].includes(n)) throw new Error('Valeur invalide (' + k + ')');
       c[k] = n; if (k === 'autoRefreshMin') await kv.del(KEY.auto);
@@ -629,6 +696,8 @@ const core = {
     for (const l of LANGS) {
       const items = (await kv.get(KEY.items(l))) || [], keep = items.filter(x => !(x.id === id && x.type === type));
       if (keep.length !== items.length) { n++; await kv.set(KEY.items(l), keep); }
+      const fr = (await kv.get(KEY.new(l))) || [], fk = fr.filter(x => !(x.id === id && x.type === type));
+      if (fk.length !== fr.length) { n++; await kv.set(KEY.new(l), fk); }
     }
     if (!n) throw new Error('Titre introuvable');
   },
@@ -681,13 +750,16 @@ const core = {
   async reset(what) {
     if (!['seen', 'items', 'all'].includes(what)) throw new Error('Action inconnue');
     for (const l of LANGS) {
-      if (what !== 'seen') await kv.set(KEY.items(l), []); // vider les catalogues
+      if (what !== 'seen') { await kv.set(KEY.items(l), []); await kv.set(KEY.new(l), []); } // vider les catalogues
       await kv.set(KEY.seen(l), {});                        // et/ou retraiter aussi les torrents rejetés
     }
+    await kv.del(KEY.newseen);
   },
-  async catalog(lang) {
+  async catalog(lang, fresh) {
     if (!LANGS.includes(lang)) throw new Error('Langue inconnue');
-    return ((await kv.get(KEY.items(lang))) || []).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, year: x.year, desc: x.desc, ts: x.ts, poster: x.poster }));
+    const cfg = await getConfig();
+    const src = fresh ? ((await kv.get(KEY.new(lang))) || []).filter(x => x.ts > Date.now() - cfg.newHours * HOUR) : (await kv.get(KEY.items(lang))) || [];
+    return src.map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, year: x.year, desc: x.desc, ts: x.ts, poster: x.poster }));
   },
 };
 
@@ -715,11 +787,11 @@ async function handler(req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
     if (!seg.length || (seg.length === 1 && seg[0] === 'configure')) return configure(req, res, 'all');
     if (seg[0] === 'health') return json(res, { ok: true, storage: kv.remote ? 'upstash' : 'fichiers', admin: !!process.env.ADMIN_PASSWORD, cron: !!process.env.CRON_SECRET }, { 'Cache-Control': 'no-store' });
-    if (seg.length === 1 && seg[0] === 'manifest.json') return json(res, buildManifest('all', (await getConfig()).streamInfo), { 'Cache-Control': 'public, s-maxage=60' });
+    if (seg.length === 1 && seg[0] === 'manifest.json') return json(res, buildManifest('all', await getConfig()), { 'Cache-Control': 'public, s-maxage=60' });
     const lang = seg[0], rest = seg.slice(1);
     if (!LANGS.includes(lang)) return send(res, 404, 'text/plain; charset=utf-8', 'Introuvable');
     if (rest[0] === 'configure') return configure(req, res, lang);
-    if (rest[0] === 'manifest.json') return json(res, buildManifest(lang, (await getConfig()).streamInfo), { 'Cache-Control': 'public, s-maxage=60' });
+    if (rest[0] === 'manifest.json') return json(res, buildManifest(lang, await getConfig()), { 'Cache-Control': 'public, s-maxage=60' });
     if (rest.length) rest[rest.length - 1] = rest[rest.length - 1].replace(/\.json$/, '');
     if (rest[0] === 'catalog' && rest.length >= 3) {
       const skip = rest.length > 3 ? parseInt(new URLSearchParams(rest[3]).get('skip'), 10) || 0 : 0;
