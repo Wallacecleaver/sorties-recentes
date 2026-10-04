@@ -147,6 +147,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .btn-small{padding:6px 12px;font-size:12px}
 .btn-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;background:transparent;border:1px solid var(--border-default);border-radius:var(--radius-sm);color:var(--text-muted);cursor:pointer;transition:all var(--transition-fast)}
 .btn-icon svg{width:16px;height:16px}
+a.btn-icon{text-decoration:none}
+textarea.form-input{min-height:84px;resize:vertical;font-family:var(--font-mono);font-size:13px}
+.blk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}.blk:last-child{border-bottom:none}.blk .nm{flex:1;min-width:0}
 .btn-icon:hover{background:var(--bg-hover);border-color:var(--accent-primary);color:var(--accent-primary)}
 .btn-icon.danger:hover{border-color:var(--accent-danger);color:var(--accent-danger)}
 .btn-icon:disabled{opacity:.5;cursor:wait}
@@ -315,6 +318,11 @@ details[open] summary{margin-bottom:12px}
         </div>
       </div>
 
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Historique des cycles</div><span class="section-count">20 derniers</span></div>
+        <div class="section-body no-padding"><div class="table-container" id="history"></div></div>
+      </div>
+
       <div class="section" id="alerts" hidden>
         <div class="section-header"><div class="section-title"><span data-icon="warning"></span>À vérifier</div></div>
         <div class="section-body" id="alertsBody"></div>
@@ -473,6 +481,55 @@ details[open] summary{margin-bottom:12px}
       </div>
 
       <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="bell"></span>Notifications</div><span id="notifyBadge"></span></div>
+        <div class="section-body">
+          <p class="hint" style="margin-top:0;margin-bottom:14px">Recevez un message à chaque nouveauté détectée, même quand Stremio est fermé (un message par titre ou épisode, au plus 10 par cycle).</p>
+          <div class="opt-grid">
+            <div><div class="t">Discord</div><div class="d">Paramètres du salon &gt; Intégrations &gt; Webhooks &gt; copier l'URL.</div>
+              <input class="form-input" id="ntDiscord" type="password" autocomplete="off" placeholder="https://discord.com/api/webhooks/…"></div>
+            <div><div class="t">Telegram</div><div class="d">Jeton du bot (via @BotFather) et identifiant de la conversation.</div>
+              <input class="form-input" id="ntToken" type="password" autocomplete="off" placeholder="Jeton du bot, ex : 123456:ABC…" style="margin-bottom:8px">
+              <input class="form-input" id="ntChat" type="text" autocomplete="off" placeholder="Identifiant de conversation, ex : 123456789 ou @canal"></div>
+          </div>
+          <div class="opt-block" style="margin-top:18px">
+            <div class="setting-row"><div><div class="t">Sorties validées</div><div class="d" style="margin-bottom:0">Les films et épisodes des catalogues « récents » (version Toutes).</div></div><label class="switch"><input type="checkbox" id="ntValid"><span></span></label></div>
+          </div>
+          <div class="opt-block">
+            <div class="setting-row"><div><div class="t">Nouveaux torrents</div><div class="d" style="margin-bottom:0">Tout ce qui est mis en ligne : peut faire beaucoup de messages.</div></div><label class="switch"><input type="checkbox" id="ntNew"><span></span></label></div>
+          </div>
+          <div class="section-buttons" style="margin-top:18px">
+            <button class="btn btn-solid" id="ntSave">Enregistrer</button>
+            <button class="btn btn-ghost" id="ntTest"><span data-icon="bell"></span>Envoyer un test</button>
+            <button class="btn btn-ghost" id="ntClearD" hidden>Retirer Discord</button>
+            <button class="btn btn-ghost" id="ntClearT" hidden>Retirer Telegram</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="filter"></span>Filtres</div></div>
+        <div class="section-body">
+          <div class="opt-block">
+            <div class="t">Qualité minimale</div>
+            <div class="d">Les releases en dessous de cette résolution sont ignorées (celles dont la résolution n'est pas indiquée passent). S'applique aux catalogues « récents » et « nouveaux torrents ».</div>
+            <select class="form-input" id="optMinRes"><option value="0">Aucun minimum</option><option value="480">480p et plus</option><option value="720">720p et plus</option><option value="1080">1080p et plus</option><option value="2160">2160p (4K) uniquement</option></select>
+          </div>
+          <div class="opt-block">
+            <div class="t">Mots exclus</div>
+            <div class="d">Une release dont le nom contient l'un de ces mots est ignorée. Séparez par des virgules ou des retours à la ligne (ex : <code>3d, hdr10+, dolby vision</code>).</div>
+            <textarea class="form-input" id="optWords" maxlength="500" placeholder="3d, hdr10+, dolby vision"></textarea>
+            <div class="section-buttons" style="margin-top:10px"><button class="btn btn-solid btn-small" id="wordsSave">Enregistrer les mots</button></div>
+          </div>
+          <div class="opt-block">
+            <div class="t">Titres masqués<span class="section-count" id="blkCount" style="margin-left:8px"></span></div>
+            <div class="d">Titres bloqués depuis l'onglet Catalogues : ils n'apparaissent plus nulle part.</div>
+            <div id="blkList"></div>
+          </div>
+          <p class="hint">Après un changement de filtre, utilisez « Retraiter les rejetés » (Maintenance) pour réexaminer les torrents déjà vus.</p>
+        </div>
+      </div>
+
+      <div class="section">
         <div class="section-header"><div class="section-title"><span data-icon="layers"></span>Règles de tri</div><button class="btn btn-ghost btn-small" id="rulesReset">Valeurs d'origine</button></div>
         <div class="section-body">
           <div class="opt-block">
@@ -585,6 +642,10 @@ const ICONS = {
   layers: 'M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z',
   key: 'M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
   tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+  bell: 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z',
+  block: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z',
+  filter: 'M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z',
+  link: 'M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z',
   list: 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
   search: 'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
 };
@@ -739,6 +800,12 @@ function renderDashboard() {
     h('div', { class: 'n' }, a.n || ''), h('div', { class: 'col' + (a.n ? '' : ' zero'), style: 'height:' + (a.n ? Math.max(6, Math.round(a.n / max * 82)) : 3) + '%' }),
     h('div', { class: 'l' }, i % 2 === 0 ? a.d.slice(0, 5) : ''))));
 
+  // historique des cycles
+  $('#history').replaceChildren(S.history && S.history.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Durée', 'Examinés', 'Validés (Toutes / VF / VFF)', 'Erreurs', 'Reportés'].map(x => h('th', {}, x)))),
+    h('tbody', {}, S.history.slice(0, 10).map(x => h('tr', {}, h('td', {}, h('small', {}, ago(x.t))), h('td', { class: 'num' }, Math.round(x.ms / 1000) + ' s'), h('td', { class: 'num' }, x.neuf),
+      h('td', { class: 'num' }, x.ok.all + ' / ' + x.ok.vf + ' / ' + x.ok.vff), h('td', { class: 'num' }, x.err ? h('span', { class: 'badge danger' }, x.err) : 0), h('td', { class: 'num' }, x.postponed || 0))))) :
+    h('div', { class: 'empty' }, 'Aucun cycle enregistré pour le moment.'));
+
   // démarrage guidé
   const total = c.movies + c.series + c.anime;
   const steps = [
@@ -755,6 +822,8 @@ function renderDashboard() {
 
   // alertes
   const al = [];
+  if (r.last && Date.now() - r.last > 24 * 3600e3) al.push(['warning', 'Données anciennes', 'Aucune mise à jour depuis ' + ago(r.last).replace('il y a ', '') + '. Ouvrez Stremio ou lancez un cycle (vérifiez aussi la fréquence dans Réglages).']);
+  if (r.notifyError) al.push(['warning', 'Notifications en erreur', r.notifyError]);
   if (!S.tmdb.set) al.push(['danger', 'Clé TMDB manquante', 'Ajoutez-la dans Réglages : sans elle, aucun cycle ne peut tourner.']);
   if (!S.trackers.length) al.push(['danger', 'Aucun tracker', 'Ajoutez votre premier tracker dans l\'onglet Trackers.']);
   S.trackers.filter(t => t.status && !t.status.ok).forEach(t => al.push(['warning', 'Tracker « ' + t.name + ' » en erreur', t.status.error]));
@@ -838,7 +907,12 @@ function renderCatalog() {
       h('td', {}, h('span', { class: 'badge ' + (i.anime ? 'warning' : i.type === 'movie' ? 'primary' : 'info') }, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série')),
       h('td', {}, h('b', {}, i.name), i.year ? h('small', {}, ' (' + i.year + ')') : ''), h('td', {}, h('small', {}, i.desc)),
       h('td', {}, h('code', {}, i.id)), h('td', {}, h('small', {}, fullDate(i.ts))),
-      h('td', {}, h('div', { class: 'row-actions' }, h('button', { class: 'btn-icon danger', title: 'Retirer des catalogues', onclick: guard(async () => {
+      h('td', {}, h('div', { class: 'row-actions' }, h('a', { class: 'btn-icon', href: 'https://www.imdb.com/title/' + i.id + '/', target: '_blank', rel: 'noopener', title: 'Ouvrir sur IMDb' }, icon('link')),
+        h('button', { class: 'btn-icon danger', title: 'Masquer définitivement ce titre', onclick: guard(async () => {
+          if (!(await confirmBox({ title: 'Masquer ce titre pour toujours ?', message: '« ' + i.name + ' » ne réapparaîtra dans aucun catalogue, même avec un nouveau torrent. Vous pourrez le débloquer dans Réglages > Filtres.', yes: 'Masquer' }))) return;
+          await api('POST', '/block', { id: i.id, type: i.type, name: i.name }); toast('success', 'Titre masqué'); await loadCatalog(); await load(false);
+        }) }, icon('block')),
+        h('button', { class: 'btn-icon danger', title: 'Retirer des catalogues', onclick: guard(async () => {
         if (!(await confirmBox({ title: 'Retirer ce titre ?', message: '« ' + i.name + ' » sera retiré des 3 versions du catalogue. Il ne reviendra que si un nouveau torrent est validé.', yes: 'Retirer' }))) return;
         await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadCatalog(); await load(false);
       }) }, icon('trash')))))))) : h('div', { class: 'empty' }, CAT.items.length ? 'Aucun résultat pour ce filtre.' : CAT.src === 'new' ? 'Aucun nouveau torrent pour le moment.' : 'Catalogue vide pour le moment. Lancez un cycle depuis le tableau de bord.'));
@@ -923,6 +997,7 @@ function renderSettings() {
   $('#optSeason').value = String(st.seasonDays); $('#optKeep').value = String(st.keepDays);
   $('#cronUrl').textContent = location.origin + '/cron?key=SECRET';
   $('#budgetS').textContent = S.run.budgetS;
+  renderNotify(); renderFilters();
 }
 const saveSetting = async (patch, msg) => { await api('PUT', '/settings', patch); Object.assign(S.settings, patch); toast('success', msg || 'Enregistré'); };
 $('#tmdbSave').onclick = guard(async () => {
@@ -956,6 +1031,36 @@ $('#clearBtn').onclick = guard(async () => {
   if (!(await confirmBox({ title: 'Vider les catalogues ?', message: 'Les 3 versions (Toutes, VF, VFF) sont vidées et tout sera réexaminé au prochain cycle.', yes: 'Vider' }))) return;
   await api('POST', '/reset', { what: 'items' }); toast('success', 'Catalogues vidés'); await load(false);
 });
+
+/* ---------- Notifications & filtres ---------- */
+function renderNotify() {
+  const n = S.notify;
+  $('#ntDiscord').value = ''; $('#ntToken').value = ''; $('#ntChat').value = n.telegramChat || '';
+  $('#ntDiscord').placeholder = n.discord ? 'Webhook enregistré (' + n.discord + ') — saisir une nouvelle URL pour le remplacer' : 'https://discord.com/api/webhooks/…';
+  $('#ntToken').placeholder = n.tokenHint ? 'Jeton enregistré (' + n.tokenHint + ') — vide = inchangé' : 'Jeton du bot, ex : 123456:ABC…';
+  $('#ntValid').checked = n.onValid; $('#ntNew').checked = n.onNew;
+  $('#ntClearD').hidden = !n.discord; $('#ntClearT').hidden = !n.tokenHint && !n.telegramChat;
+  $('#notifyBadge').replaceChildren(h('span', { class: 'badge ' + (n.discordOk || n.telegram ? 'success' : 'muted') }, [n.discordOk ? 'Discord' : '', n.telegram ? 'Telegram' : ''].filter(Boolean).join(' + ') || 'Aucun canal'));
+}
+function renderFilters() {
+  $('#optMinRes').value = String(S.settings.minRes); $('#optWords').value = S.settings.excludeWords || '';
+  $('#blkCount').textContent = S.blocked.length ? S.blocked.length + ' titre(s)' : '';
+  $('#blkList').replaceChildren(S.blocked.length ? h('div', {}, S.blocked.map(b => h('div', { class: 'blk' },
+    h('span', { class: 'badge ' + (b.type === 'movie' ? 'primary' : 'info') }, b.type === 'movie' ? 'Film' : 'Série'), h('span', { class: 'nm' }, h('b', {}, b.name), ' ', h('code', {}, b.id)),
+    h('button', { class: 'btn btn-ghost btn-small', onclick: guard(async () => { await api('DELETE', '/block/' + b.type + '/' + encodeURIComponent(b.id)); toast('success', 'Titre débloqué'); await load(false); renderFilters(); }) }, 'Débloquer')))) :
+    h('div', { class: 'hint', style: 'margin:0' }, 'Aucun titre masqué.'));
+}
+$('#ntSave').onclick = guard(async () => {
+  await api('PUT', '/notify', { discord: $('#ntDiscord').value, telegramToken: $('#ntToken').value, telegramChat: $('#ntChat').value, onValid: $('#ntValid').checked, onNew: $('#ntNew').checked });
+  toast('success', 'Notifications enregistrées'); await load(false); renderNotify();
+});
+$('#ntValid').onchange = guard(async () => { await api('PUT', '/notify', { onValid: $('#ntValid').checked }); S.notify.onValid = $('#ntValid').checked; toast('success', 'Enregistré'); });
+$('#ntNew').onchange = guard(async () => { await api('PUT', '/notify', { onNew: $('#ntNew').checked }); S.notify.onNew = $('#ntNew').checked; toast('success', 'Enregistré'); });
+$('#ntTest').onclick = guard(async () => { const r = await api('POST', '/notify/test'); toast(r.ok ? 'success' : 'error', r.ok ? 'Test envoyé' : 'Échec du test', r.message); });
+$('#ntClearD').onclick = guard(async () => { await api('PUT', '/notify', { clearDiscord: true }); toast('success', 'Discord retiré'); await load(false); renderNotify(); });
+$('#ntClearT').onclick = guard(async () => { await api('PUT', '/notify', { clearTelegram: true }); toast('success', 'Telegram retiré'); await load(false); renderNotify(); });
+$('#optMinRes').onchange = guard(async () => saveSetting({ minRes: +$('#optMinRes').value }, 'Filtre enregistré — utilisez « Retraiter les rejetés » pour retester'));
+$('#wordsSave').onclick = guard(async () => saveSetting({ excludeWords: $('#optWords').value }, 'Mots exclus enregistrés — utilisez « Retraiter les rejetés » pour retester'));
 
 /* ---------- Installation (modale) ---------- */
 function renderInstall() {

@@ -42,7 +42,7 @@ const MOVIE_CATS = '2000,2010,2030,2060,2070,2080,2090';
 const SERIES_CATS = '5000,5070,5080';
 const LANGS = ['all', 'vf', 'vff'];
 const LANG_NAMES = { all: 'Toutes les versions', vf: 'VF (VFQ incluse)', vff: 'VFF / VF2 uniquement' };
-const KEY = { config: 'sr:config', run: 'sr:run', lock: 'sr:lock', dvds: 'sr:dvds', log: 'sr:log', auto: 'sr:auto', new: l => 'sr:new:' + l, newseen: 'sr:newseen', items: l => 'sr:items:' + l, seen: l => 'sr:seen:' + l };
+const KEY = { config: 'sr:config', run: 'sr:run', lock: 'sr:lock', dvds: 'sr:dvds', log: 'sr:log', auto: 'sr:auto', new: l => 'sr:new:' + l, newseen: 'sr:newseen', notified: 'sr:notified', runs: 'sr:runs', items: l => 'sr:items:' + l, seen: l => 'sr:seen:' + l };
 
 const log = (...a) => console.log(...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -51,7 +51,7 @@ const seenKey = h => h.slice(0, 20); // clé compacte pour rester loin de la lim
 
 /* ------------------------------------------------------------------ configuration (dashboard) */
 const TITLE_FORMATS = ['plain', 'episode', 'episode_date', 'date_only'];
-const LISTS = { autoRefreshMin: [0, 15, 30, 60, 120, 360], digitalDays: [3, 7, 14, 30], episodeHours: [24, 48, 72, 168], seasonDays: [3, 7, 14], keepDays: [7, 14, 30, 60], newHours: [12, 24, 48, 72, 168] };
+const LISTS = { autoRefreshMin: [0, 15, 30, 60, 120, 360], digitalDays: [3, 7, 14, 30], episodeHours: [24, 48, 72, 168], seasonDays: [3, 7, 14], keepDays: [7, 14, 30, 60], newHours: [12, 24, 48, 72, 168], minRes: [0, 480, 720, 1080, 2160] };
 const pick = (list, v, def) => list.includes(+v) ? +v : def;
 let cfgCache = null, cfgAt = 0;
 async function getConfig(force) {
@@ -66,6 +66,10 @@ async function getConfig(force) {
     seasonDays: pick(LISTS.seasonDays, c.seasonDays, 7), keepDays: pick(LISTS.keepDays, c.keepDays, 30),
     newTorrents: c.newTorrents === undefined ? true : !!c.newTorrents, // catalogues « Nouveaux torrents »
     newHours: pick(LISTS.newHours, c.newHours, 24), newHideCam: c.newHideCam === undefined ? true : !!c.newHideCam,
+    minRes: pick(LISTS.minRes, c.minRes, 0), excludeWords: String(c.excludeWords || '').slice(0, 500), // filtres de qualité / mots exclus
+    blocked: Array.isArray(c.blocked) ? c.blocked.slice(0, 300) : [],                                  // titres masqués définitivement
+    notify: { discord: String((c.notify || {}).discord || ''), telegramToken: String((c.notify || {}).telegramToken || ''), telegramChat: String((c.notify || {}).telegramChat || ''),
+      onValid: !c.notify || c.notify.onValid !== false, onNew: !!(c.notify && c.notify.onNew) },
   };
   cfgAt = Date.now();
   return cfgCache;
@@ -446,19 +450,87 @@ async function buildNew(env, it, rel) {
 }
 function addNew(list, e) { // un titre n'apparaît qu'une fois (le torrent le plus récent l'emporte)
   const i = list.findIndex(x => x.id === e.id && x.type === e.type);
-  if (i >= 0) { if (list[i].ts >= e.ts) return; list.splice(i, 1); }
+  if (i >= 0) { if (list[i].ts >= e.ts) return false; list.splice(i, 1); }
   list.push(e); list.sort((a, b) => b.ts - a.ts);
+  return true;
+}
+
+/* ------------------------------------------------------------------ filtres, titres masqués */
+const norm = s => String(s).toLowerCase().replace(/[._\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+const wordsOf = txt => String(txt || '').split(/[,;\n]+/).map(norm).filter(w => w.length >= 2).slice(0, 40);
+function resOf(t) { // résolution annoncée dans le nom de la release (null si inconnue)
+  if (/(?<![A-Za-z0-9])(2160p|4K|UHD)(?![A-Za-z0-9])/i.test(t)) return 2160;
+  if (/(?<![A-Za-z0-9])1080[pi](?![A-Za-z0-9])/i.test(t)) return 1080;
+  if (/(?<![A-Za-z0-9])720p(?![A-Za-z0-9])/i.test(t)) return 720;
+  if (/(?<![A-Za-z0-9])(480p|576p|DVDRIP|DVDSCR|SD)(?![A-Za-z0-9])/i.test(t)) return 480;
+  return null;
+}
+function filterReason(words, minRes, title) { // null si la release passe les filtres, sinon la raison
+  const n = norm(title);
+  for (const w of words) if (n.includes(w)) return 'mot exclu « ' + w + ' »';
+  if (minRes) { const r = resOf(title); if (r != null && r < minRes) return 'qualité ' + r + 'p inférieure au minimum (' + minRes + 'p)'; }
+  return null;
+}
+const blockedSet = cfg => new Set((cfg.blocked || []).map(b => b.type + ':' + b.id));
+const unblocked = (cfg, list) => { if (!cfg.blocked || !cfg.blocked.length) return list; const s = blockedSet(cfg); return list.filter(x => !s.has(x.type + ':' + x.id)); };
+
+/* ------------------------------------------------------------------ notifications (Discord / Telegram) */
+const DISCORD_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/;
+const TG_TOKEN_RE = /^\d{5,}:[\w-]{20,}$/, TG_CHAT_RE = /^(-?\d{5,20}|@[A-Za-z0-9_]{4,})$/;
+async function sendDiscord(url, entries, title) {
+  for (let i = 0; i < entries.length; i += 10) {
+    const embeds = entries.slice(i, i + 10).map(e => ({ title: String(e.name).slice(0, 250), description: String(e.desc || '').slice(0, 500), color: 0xf97316,
+      url: 'https://www.imdb.com/title/' + e.id + '/', thumbnail: e.poster ? { url: e.poster } : undefined, timestamp: new Date(e.ts).toISOString() }));
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({ username: 'Sorties récentes', content: i === 0 ? title : undefined, embeds }) });
+    if (!r.ok) throw new Error('Discord : HTTP ' + r.status);
+  }
+}
+async function sendTelegram(token, chat, entries, title) {
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  for (const e of entries) {
+    const caption = `${esc(title)}\n<b>${esc(e.name)}</b>\n${esc(e.desc || '')}\nhttps://www.imdb.com/title/${e.id}/`.slice(0, 1000);
+    const photo = !!e.poster;
+    const r = await fetch(`https://api.telegram.org/bot${token}/${photo ? 'sendPhoto' : 'sendMessage'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(10000),
+      body: JSON.stringify(photo ? { chat_id: chat, photo: e.poster, caption, parse_mode: 'HTML' } : { chat_id: chat, text: caption, parse_mode: 'HTML' }) });
+    if (!r.ok) throw new Error('Telegram : HTTP ' + r.status); // le jeton n'apparaît jamais dans les messages
+  }
+}
+const channelsOf = n => ({ discord: DISCORD_RE.test(n.discord) ? n.discord : null, telegram: TG_TOKEN_RE.test(n.telegramToken) && TG_CHAT_RE.test(n.telegramChat) ? [n.telegramToken, n.telegramChat] : null });
+// Envoie les nouveautés de ce cycle (une seule fois par titre/épisode). Retourne un message d'erreur ou null.
+async function runNotify(cfg, valid, fresh) {
+  const n = cfg.notify, ch = channelsOf(n);
+  if (!ch.discord && !ch.telegram) return null;
+  const jobs = [];
+  if (n.onValid && valid.length) jobs.push(['valid', valid]);
+  if (n.onNew && fresh.length) jobs.push(['new', fresh]);
+  if (!jobs.length) return null;
+  const sent = (await kv.get(KEY.notified)) || {}, now = Date.now(), errs = [];
+  for (const [kind, entries] of jobs) {
+    const keyOf = e => kind + ':' + e.type + ':' + e.id + ':' + (e.type === 'series' ? e.season + 'x' + e.episode : '');
+    const todo = entries.filter(e => e.ts > now - 36 * HOUR && !sent[keyOf(e)]).slice(0, 10); // pas de rafale sur l'arriéré
+    if (!todo.length) continue;
+    const title = kind === 'valid' ? '🎬 Nouvelles sorties' : '⏱ Nouveaux torrents';
+    let ok = false;
+    if (ch.discord) { try { await sendDiscord(ch.discord, todo, title); ok = true; } catch (e) { errs.push(e.message); } }
+    if (ch.telegram) { try { await sendTelegram(ch.telegram[0], ch.telegram[1], todo, title); ok = true; } catch (e) { errs.push(e.message); } }
+    if (ok) for (const e of todo) sent[keyOf(e)] = Math.floor(now / 60000);
+  }
+  for (const [k, m] of Object.entries(sent)) if (m * 60000 < now - 30 * DAY) delete sent[k];
+  await kv.set(KEY.notified, sent);
+  return errs.length ? [...new Set(errs)].join(' ; ') : null;
 }
 
 /* ------------------------------------------------------------------ cycle de mise à jour (borné dans le temps) */
 function addEntry(st, e) {
   const i = st.items.findIndex(x => x.id === e.id && x.type === e.type);
   if (i >= 0) {
-    if (e.type === 'movie' || st.items[i].ts >= e.ts) return; // un film n'apparaît qu'une fois
+    if (e.type === 'movie' || st.items[i].ts >= e.ts) return false; // un film n'apparaît qu'une fois
     st.items.splice(i, 1);                                     // une série remonte en tête à chaque nouvel épisode
   }
   st.items.push(e);
   st.items.sort((a, b) => b.ts - a.ts);
+  return true;
 }
 async function cycle(budgetMs = CYCLE_BUDGET_MS) {
   const t0 = Date.now(), deadline = t0 + budgetMs - SAVE_MARGIN_MS;
@@ -490,13 +562,21 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
     const needsNew = x => cfg.newTorrents && x.pub > 0 && Date.now() - x.pub <= newWin && !newSeen[seenKey(x.hash)];
     const todo = [...uniq.values()].filter(x => needsNew(x) || LANGS.some(l => !langs[l].seen[seenKey(x.hash)])).sort((a, b) => (b.pub || 0) - (a.pub || 0)); // les plus récents d'abord
     const stats = Object.fromEntries(LANGS.map(l => [l, { neuf: 0, ok: 0, ko: 0, err: 0 }]));
-    const rules = rulesOf(cfg);
+    const rules = rulesOf(cfg), words = wordsOf(cfg.excludeWords), blocked = blockedSet(cfg), freshValid = [], freshNew = [];
     const envs = Object.fromEntries(LANGS.map(l => [l, { l, m: cfg.tmdbKey, trackers, rules }]));
     let postponed = 0;
     const journal = []; // décisions de ce cycle (affichées dans l'onglet Journal)
     await pool(3, todo, async it => {
       if (Date.now() > deadline) { postponed++; return; } // plus le temps : reporté au cycle suivant
       const rel = parseRelease(it.title);
+      const why = filterReason(words, cfg.minRes, it.title); // filtres de qualité / mots exclus
+      if (why) {
+        const mins = Math.floor(Date.now() / 60000), sk0 = seenKey(it.hash);
+        for (const l of LANGS) if (!langs[l].seen[sk0]) { langs[l].seen[sk0] = mins; stats[l].neuf++; stats[l].ko++; }
+        if (needsNew(it)) newSeen[sk0] = mins;
+        journal.push({ t: Date.now(), lang: 'all', title: it.title, kind: 'ko', reason: 'filtré : ' + why, tr: it.tr.name });
+        return;
+      }
       for (const lang of LANGS) {
         const st = langs[lang], sk = seenKey(it.hash);
         if (st.seen[sk]) continue;
@@ -504,14 +584,15 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
         try {
           const r = it.kind === 'series' ? await evalSeries(envs[lang], it, rel) : await evalMovie(envs[lang], it, rel);
           st.seen[sk] = Math.floor(Date.now() / 60000); // traité : ne sera pas retraité
-          if (r.entry) { addEntry(st, r.entry); stats[lang].ok++; journal.push({ t: Date.now(), lang, title: it.title, kind: 'ok', reason: r.entry.name + ' — ' + r.entry.desc, tr: it.tr.name }); log(`[${lang}] + ${r.entry.name} (${r.entry.desc})`); }
+          if (r.entry && blocked.has(r.entry.type + ':' + r.entry.id)) { stats[lang].ko++; if (lang === 'all') journal.push({ t: Date.now(), lang, title: it.title, kind: 'ko', reason: 'titre masqué : ' + r.entry.name, tr: it.tr.name }); }
+          else if (r.entry) { if (addEntry(st, r.entry) && lang === 'all') freshValid.push(r.entry); stats[lang].ok++; journal.push({ t: Date.now(), lang, title: it.title, kind: 'ok', reason: r.entry.name + ' — ' + r.entry.desc, tr: it.tr.name }); log(`[${lang}] + ${r.entry.name} (${r.entry.desc})`); }
           else { stats[lang].ko++; if (lang === 'all') journal.push({ t: Date.now(), lang, title: it.title, kind: 'ko', reason: r.reason, tr: it.tr.name }); if (process.env.DEBUG) log(`[${lang}] - ${it.title} : ${r.reason}`); }
         } catch (e) { stats[lang].err++; journal.push({ t: Date.now(), lang, title: it.title, kind: 'err', reason: e.message, tr: it.tr.name }); log(`[${lang}] erreur transitoire, sera retenté : ${it.title} : ${e.message}`); }
       }
       if (needsNew(it)) { // catalogue « Nouveaux torrents » : tout torrent posté récemment et identifiable
         try {
           const res = rel.cam && cfg.newHideCam ? null : await buildNew(envs.all, it, rel);
-          if (res) for (const l of LANGS) if (langOk(l, rel, res.orig, it.kind)) addNew(newLists[l], { ...res.entry });
+          if (res && !blocked.has(res.entry.type + ':' + res.entry.id)) for (const l of LANGS) if (langOk(l, rel, res.orig, it.kind) && addNew(newLists[l], { ...res.entry }) && l === 'all') freshNew.push(res.entry);
           newSeen[seenKey(it.hash)] = Math.floor(Date.now() / 60000);
           stats.all.nouveaux = (stats.all.nouveaux || 0) + (res ? 1 : 0);
         } catch (e) { log(`[nouveaux] erreur transitoire : ${it.title} : ${e.message}`); }
@@ -530,9 +611,14 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
       for (const [h, m] of Object.entries(newSeen)) if (m * 60000 < now - 3 * DAY) delete newSeen[h];
       await kv.set(KEY.newseen, newSeen);
     }
+    let notifyError = null;
+    try { notifyError = await runNotify(cfg, freshValid, freshNew); } catch (e) { notifyError = e.message; }
     if (journal.length) { journal.sort((a, b) => b.t - a.t); await kv.set(KEY.log, journal.concat((await kv.get(KEY.log)) || []).slice(0, 400)); }
-    Object.assign(run, { last: Date.now(), ms: Date.now() - t0, stats, postponed, dvds: dvdsCount });
+    Object.assign(run, { last: Date.now(), ms: Date.now() - t0, stats, postponed, dvds: dvdsCount, notifyError });
     await kv.set(KEY.run, run);
+    const hist = (await kv.get(KEY.runs)) || [];
+    hist.unshift({ t: run.last, ms: run.ms, ok: Object.fromEntries(LANGS.map(l => [l, stats[l].ok])), neuf: stats.all.neuf, err: LANGS.reduce((a, l) => a + stats[l].err, 0), postponed });
+    await kv.set(KEY.runs, hist.slice(0, 20));
     const msg = LANGS.map(l => `${l} +${stats[l].ok}`).join('  ') + (postponed ? `  (${postponed} torrent(s) reporté(s) au prochain cycle)` : '');
     log('cycle terminé en', Math.round(run.ms / 1000), 's :', msg);
     return { ok: true, message: 'Cycle terminé : ' + msg, postponed };
@@ -586,8 +672,8 @@ async function catalog(lang, id, skip) {
   const fresh = id.startsWith('sr-new');
   if (fresh && !cfg.newTorrents) return [];
   const items = (await kv.get(fresh ? KEY.new(lang) : KEY.items(lang))) || [];
-  const list = fresh ? items.filter(x => x.ts > Date.now() - cfg.newHours * HOUR && (id === 'sr-new-films' ? x.type === 'movie' : x.type === 'series'))
-    : items.filter(x => id === 'sr-films' ? x.type === 'movie' : id === 'sr-animes' ? x.type === 'series' && x.anime : x.type === 'series' && !x.anime);
+  const list = unblocked(cfg, fresh ? items.filter(x => x.ts > Date.now() - cfg.newHours * HOUR && (id === 'sr-new-films' ? x.type === 'movie' : x.type === 'series'))
+    : items.filter(x => id === 'sr-films' ? x.type === 'movie' : id === 'sr-animes' ? x.type === 'series' && x.anime : x.type === 'series' && !x.anime));
   return list.slice(skip, skip + PAGE).map(x => ({
     id: x.id, type: x.type, name: displayName(x, format), poster: x.poster, releaseInfo: x.year || undefined, description: x.desc,
   }));
@@ -630,7 +716,7 @@ const core = {
     const cfg = await getConfig(true), run = (await kv.get(KEY.run)) || {}, counts = {};
     let latestAll = [];
     for (const l of LANGS) {
-      const it = (await kv.get(KEY.items(l))) || [];
+      const it = unblocked(cfg, (await kv.get(KEY.items(l))) || []);
       if (l === 'all') latestAll = it;
       counts[l] = { movies: it.filter(x => x.type === 'movie').length, series: it.filter(x => x.type === 'series' && !x.anime).length, anime: it.filter(x => x.anime).length };
     }
@@ -640,16 +726,20 @@ const core = {
       activity.push({ d: new Date(a).toLocaleDateString('fr-FR', { timeZone: 'UTC', day: '2-digit', month: '2-digit' }), n: latestAll.filter(x => x.ts >= a && x.ts < a + DAY).length });
     }
     const autoAt = +(await kv.get(KEY.auto)) || 0;
-    const newAll = cfg.newTorrents ? ((await kv.get(KEY.new('all'))) || []).filter(x => x.ts > Date.now() - cfg.newHours * HOUR) : [];
+    const newAll = cfg.newTorrents ? unblocked(cfg, ((await kv.get(KEY.new('all'))) || []).filter(x => x.ts > Date.now() - cfg.newHours * HOUR)) : [];
+    const history = (await kv.get(KEY.runs)) || [];
+    const nf = cfg.notify, ch = channelsOf(nf);
     return {
       langs: LANG_NAMES,
       trackers: cfg.trackers.map(t => ({ id: t.id, name: t.name, url: t.url, keyHint: mask(t.apikey), enabled: t.enabled, status: (run.trackerStatus || {})[t.id] || null })),
       tmdb: { set: !!cfg.tmdbKey, hint: mask(cfg.tmdbKey) },
-      settings: { streamInfo: cfg.streamInfo, autoRefreshMin: cfg.autoRefreshMin, titleFormat: cfg.titleFormat, newTorrents: cfg.newTorrents, newHours: cfg.newHours, newHideCam: cfg.newHideCam, movieFirstTorrent: cfg.movieFirstTorrent, digitalDays: cfg.digitalDays, episodeHours: cfg.episodeHours, seasonDays: cfg.seasonDays, keepDays: cfg.keepDays },
+      settings: { streamInfo: cfg.streamInfo, autoRefreshMin: cfg.autoRefreshMin, titleFormat: cfg.titleFormat, newTorrents: cfg.newTorrents, newHours: cfg.newHours, newHideCam: cfg.newHideCam, minRes: cfg.minRes, excludeWords: cfg.excludeWords, movieFirstTorrent: cfg.movieFirstTorrent, digitalDays: cfg.digitalDays, episodeHours: cfg.episodeHours, seasonDays: cfg.seasonDays, keepDays: cfg.keepDays },
       latest: latestAll.slice(0, 8).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, desc: x.desc, ts: x.ts, poster: x.poster })),
       newest: newAll.slice(0, 8).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, desc: x.desc, ts: x.ts, poster: x.poster })), newCount: newAll.length,
+      history, blocked: cfg.blocked,
+      notify: { discord: nf.discord ? mask(nf.discord) : '', discordOk: !!ch.discord, telegram: !!ch.telegram, telegramChat: nf.telegramChat, tokenHint: nf.telegramToken ? mask(nf.telegramToken) : '', onValid: nf.onValid, onNew: nf.onNew },
       activity, autoNext: autoAt && cfg.autoRefreshMin ? autoAt + cfg.autoRefreshMin * 60000 : null,
-      run: { busy: !!(await kv.get(KEY.lock)), last: run.last || 0, ms: run.ms || 0, stats: run.stats || {}, postponed: run.postponed || 0, budgetS: CYCLE_BUDGET_MS / 1000 },
+      run: { busy: !!(await kv.get(KEY.lock)), last: run.last || 0, ms: run.ms || 0, stats: run.stats || {}, postponed: run.postponed || 0, budgetS: CYCLE_BUDGET_MS / 1000, notifyError: run.notifyError || null },
       counts, dvds: run.dvds || 0, dvdsOn: DVDS_ON,
     };
   },
@@ -684,12 +774,52 @@ const core = {
     if ('movieFirstTorrent' in o) c.movieFirstTorrent = !!o.movieFirstTorrent;
     if ('newTorrents' in o) c.newTorrents = !!o.newTorrents;
     if ('newHideCam' in o) c.newHideCam = !!o.newHideCam;
+    if ('excludeWords' in o) c.excludeWords = String(o.excludeWords || '').slice(0, 500);
     for (const k of Object.keys(LISTS)) if (k in o) {
       const n = +o[k]; if (!LISTS[k].includes(n)) throw new Error('Valeur invalide (' + k + ')');
       c[k] = n; if (k === 'autoRefreshMin') await kv.del(KEY.auto);
     }
     if ('titleFormat' in o) { if (!TITLE_FORMATS.includes(o.titleFormat)) throw new Error('Format invalide'); c.titleFormat = o.titleFormat; }
     await saveConfig(c);
+  },
+  async setNotify(o) {
+    const c = await getConfig(true), n = c.notify, v = x => String(x == null ? '' : x).trim();
+    if (o.clearDiscord) n.discord = '';
+    if (v(o.discord)) { if (!DISCORD_RE.test(v(o.discord))) throw new Error('URL de webhook Discord invalide (https://discord.com/api/webhooks/…)'); n.discord = v(o.discord); }
+    if (o.clearTelegram) { n.telegramToken = ''; n.telegramChat = ''; }
+    if (v(o.telegramToken)) { if (!TG_TOKEN_RE.test(v(o.telegramToken))) throw new Error('Jeton de bot Telegram invalide (forme 123456:ABC…)'); n.telegramToken = v(o.telegramToken); }
+    if (v(o.telegramChat)) { if (!TG_CHAT_RE.test(v(o.telegramChat))) throw new Error('Identifiant de conversation Telegram invalide (nombre ou @canal)'); n.telegramChat = v(o.telegramChat); }
+    if ('onValid' in o) n.onValid = !!o.onValid;
+    if ('onNew' in o) n.onNew = !!o.onNew;
+    await saveConfig(c);
+  },
+  async testNotify() {
+    const ch = channelsOf((await getConfig(true)).notify);
+    if (!ch.discord && !ch.telegram) return { ok: false, message: 'Aucun canal configuré (webhook Discord ou bot Telegram + conversation).' };
+    const sample = [{ id: 'tt0111161', type: 'movie', name: 'Message de test', desc: 'Les notifications de Sorties récentes fonctionnent.', ts: Date.now() }];
+    const res = [];
+    if (ch.discord) { try { await sendDiscord(ch.discord, sample, '🧪 Test'); res.push('Discord OK'); } catch (e) { res.push(e.message); } }
+    if (ch.telegram) { try { await sendTelegram(ch.telegram[0], ch.telegram[1], sample, '🧪 Test'); res.push('Telegram OK'); } catch (e) { res.push(e.message); } }
+    return { ok: res.every(x => /OK$/.test(x)), message: res.join(' · ') };
+  },
+  async blockItem(o) { // masque définitivement un titre (et le retire des catalogues)
+    const id = String((o && o.id) || ''), type = o && o.type;
+    if (!/^tt\d+$/.test(id) || !['movie', 'series'].includes(type)) throw new Error('Titre invalide');
+    const c = await getConfig(true);
+    if (!c.blocked.some(b => b.id === id && b.type === type)) { if (c.blocked.length >= 300) throw new Error('Liste pleine (300 titres)'); c.blocked.push({ id, type, name: String(o.name || id).slice(0, 120) }); await saveConfig(c); }
+    await core.removeItem(id, type).catch(() => {});
+  },
+  async unblockItem(type, id) {
+    const c = await getConfig(true), n = c.blocked.length;
+    c.blocked = c.blocked.filter(b => !(b.id === id && b.type === type));
+    if (c.blocked.length === n) throw new Error('Titre introuvable dans la liste');
+    await saveConfig(c);
+  },
+  guard: { // limitation des tentatives de connexion, partagée entre toutes les instances (8 échecs = 15 min)
+    key: ip => 'sr:fail:' + crypto.createHash('sha1').update(String(ip)).digest('hex').slice(0, 16),
+    async blocked(ip) { const f = await kv.get(this.key(ip)); return !!(f && f.n >= 8); },
+    async fail(ip) { const f = (await kv.get(this.key(ip))) || { n: 0 }; f.n++; await kv.set(this.key(ip), f, 900); },
+    async clear(ip) { await kv.del(this.key(ip)); },
   },
   async removeItem(id, type) { // retire un titre de tous les catalogues
     let n = 0;
@@ -758,7 +888,7 @@ const core = {
   async catalog(lang, fresh) {
     if (!LANGS.includes(lang)) throw new Error('Langue inconnue');
     const cfg = await getConfig();
-    const src = fresh ? ((await kv.get(KEY.new(lang))) || []).filter(x => x.ts > Date.now() - cfg.newHours * HOUR) : (await kv.get(KEY.items(lang))) || [];
+    const src = unblocked(cfg, fresh ? ((await kv.get(KEY.new(lang))) || []).filter(x => x.ts > Date.now() - cfg.newHours * HOUR) : (await kv.get(KEY.items(lang))) || []);
     return src.map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, year: x.year, desc: x.desc, ts: x.ts, poster: x.poster }));
   },
 };
@@ -786,7 +916,10 @@ async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', '*');
     if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
     if (!seg.length || (seg.length === 1 && seg[0] === 'configure')) return configure(req, res, 'all');
-    if (seg[0] === 'health') return json(res, { ok: true, storage: kv.remote ? 'upstash' : 'fichiers', admin: !!process.env.ADMIN_PASSWORD, cron: !!process.env.CRON_SECRET }, { 'Cache-Control': 'no-store' });
+    if (seg[0] === 'health') {
+      let last = null; try { const r = await kv.get(KEY.run); last = (r && r.last) || null; } catch { /* stockage indisponible */ }
+      return json(res, { ok: true, storage: kv.remote ? 'upstash' : 'fichiers', admin: !!process.env.ADMIN_PASSWORD, cron: !!process.env.CRON_SECRET, lastCycle: last, ageMin: last ? Math.round((Date.now() - last) / 60000) : null }, { 'Cache-Control': 'no-store' });
+    }
     if (seg.length === 1 && seg[0] === 'manifest.json') return json(res, buildManifest('all', await getConfig()), { 'Cache-Control': 'public, s-maxage=60' });
     const lang = seg[0], rest = seg.slice(1);
     if (!LANGS.includes(lang)) return send(res, 404, 'text/plain; charset=utf-8', 'Introuvable');

@@ -20,7 +20,6 @@ module.exports = function createDashboard(core, { password }) {
   const okToken = t => { const [exp, sig] = String(t || '').split('.'); return !!(exp && sig && +exp > Date.now() && eq(sig, sign(exp))); };
   const readCookie = req => { const m = (req.headers.cookie || '').match(new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]+)')); return m && m[1]; };
 
-  const fails = new Map(); // limitation des tentatives : 8 échecs => blocage 15 min
   const ipOf = req => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
 
   const send = (res, code, type, body, h = {}) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', ...h }); res.end(body); };
@@ -52,15 +51,11 @@ module.exports = function createDashboard(core, { password }) {
       const a = r.slice(1), k = a[0];
 
       if (k === 'login' && m === 'POST') {
-        const ip = ipOf(req), f = fails.get(ip);
-        if (f && f.n >= 8 && f.until > Date.now()) return json(res, { error: 'Trop de tentatives, réessayez dans quelques minutes' }, 429);
+        const ip = ipOf(req);
+        if (await core.guard.blocked(ip)) return json(res, { error: 'Trop de tentatives, réessayez dans 15 minutes' }, 429);
         const b = await readBody(req);
-        if (!eq(b.password || '', password)) {
-          const n = (f && f.until > Date.now() ? f.n : 0) + 1;
-          fails.set(ip, { n, until: Date.now() + 15 * 60e3 });
-          return json(res, { error: 'Mot de passe incorrect' }, 401);
-        }
-        fails.delete(ip);
+        if (!eq(b.password || '', password)) { await core.guard.fail(ip); return json(res, { error: 'Mot de passe incorrect' }, 401); }
+        await core.guard.clear(ip);
         return json(res, { ok: true }, 200, { 'Set-Cookie': cookieHeader(req, makeToken(), TTL / 1000) });
       }
       if (k === 'logout' && m === 'POST') return json(res, { ok: true }, 200, { 'Set-Cookie': cookieHeader(req, '', 0) });
@@ -83,6 +78,14 @@ module.exports = function createDashboard(core, { password }) {
       if (k === 'reset' && m === 'POST') { await core.reset((await readBody(req)).what); return json(res, { ok: true }); }
       if (k === 'catalog' && m === 'GET') return json(res, await core.catalog(a[1], a[2] === 'new'));
       if (k === 'item' && m === 'DELETE') { await core.removeItem(decodeURIComponent(a[1]), a[2]); return json(res, { ok: true }); }
+      if (k === 'notify') {
+        if (a.length === 1 && m === 'PUT') { await core.setNotify(await readBody(req)); return json(res, { ok: true }); }
+        if (a[1] === 'test' && m === 'POST') return json(res, await core.testNotify());
+      }
+      if (k === 'block') {
+        if (a.length === 1 && m === 'POST') { await core.blockItem(await readBody(req)); return json(res, { ok: true }); }
+        if (a.length === 3 && m === 'DELETE') { await core.unblockItem(a[1], decodeURIComponent(a[2])); return json(res, { ok: true }); }
+      }
       if (k === 'explain' && m === 'POST') return json(res, await core.explain((await readBody(req)).q));
       if (k === 'log' && m === 'GET') return json(res, await core.getLog());
       if (k === 'log' && m === 'DELETE') { await core.clearLog(); return json(res, { ok: true }); }
