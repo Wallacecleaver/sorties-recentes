@@ -78,6 +78,16 @@ module.exports = function createDashboard(core, { password }) {
       if (k === 'reset' && m === 'POST') { await core.reset((await readBody(req)).what); return json(res, { ok: true }); }
       if (k === 'catalog' && m === 'GET') return json(res, await core.catalog(a[1], a[2] === 'new'));
       if (k === 'item' && m === 'DELETE') { await core.removeItem(decodeURIComponent(a[1]), a[2]); return json(res, { ok: true }); }
+      if (k === 'tg') {
+        if (a.length === 1 && m === 'GET') return json(res, await core.tgState());
+        const op = a[1];
+        if (op === 'config' && m === 'PUT') { await core.setTg(await readBody(req)); return json(res, { ok: true }); }
+        if (op === 'test' && m === 'POST') return json(res, await core.tgTest());
+        if (op === 'analyze' && m === 'POST') return json(res, await core.tgAnalyze());
+        if (op === 'review' && m === 'POST') { await core.tgReview(await readBody(req)); return json(res, { ok: true }); }
+        if (op === 'reprocess' && m === 'POST') { await core.tgReprocess(); return json(res, { ok: true }); }
+        if (op === 'clear' && m === 'POST') { await core.tgClear(); return json(res, { ok: true }); }
+      }
       if (k === 'notify') {
         if (a.length === 1 && m === 'PUT') { await core.setNotify(await readBody(req)); return json(res, { ok: true }); }
         if (a[1] === 'test' && m === 'POST') return json(res, await core.testNotify());

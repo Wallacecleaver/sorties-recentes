@@ -15,5 +15,11 @@ Rien à programmer : quand Stremio charge un catalogue et que les données ont p
 (réglable dans Réglages, 30 min par défaut), l'addon cherche les nouveautés en arrière-plan.
 `/cron?key=CRON_SECRET` reste disponible pour un déclencheur externe (facultatif).
 
+## Source Telegram (facultative, gratuite)
+Réglages dans l'onglet **Telegram** du dashboard : l'addon lit l'aperçu public d'un canal (`t.me/s/<canal>`), fait lire les images
+d'annonce par Gemini (clé gratuite sur aistudio.google.com/apikey), retrouve les titres sur TMDB et alimente les catalogues
+« Sorties annoncées ». Les cas incertains vont dans une file « À vérifier ». Pour une lecture même quand Stremio est fermé,
+programmez `/cron?key=CRON_SECRET` sur cron-job.org (gratuit) toutes les 10 minutes.
+
 ## En local
 `npm install` puis `ADMIN_PASSWORD=xxx node index.js` (données dans ./data/kv).

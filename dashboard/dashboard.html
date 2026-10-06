@@ -272,6 +272,7 @@ details[open] summary{margin-bottom:12px}
       <button class="nav-tab active" data-page="dashboard"><span data-icon="dashboard"></span>Tableau de bord</button>
       <button class="nav-tab" data-page="trackers"><span data-icon="server"></span>Trackers</button>
       <button class="nav-tab" data-page="catalog"><span data-icon="film"></span>Catalogues</button>
+      <button class="nav-tab" data-page="telegram"><span data-icon="send"></span>Telegram</button>
       <button class="nav-tab" data-page="log"><span data-icon="list"></span>Journal</button>
       <button class="nav-tab" data-page="diag"><span data-icon="search"></span>Diagnostic</button>
       <button class="nav-tab" data-page="settings"><span data-icon="settings"></span>Réglages</button>
@@ -355,6 +356,68 @@ details[open] summary{margin-bottom:12px}
           <input class="form-input" id="catSearch" type="search" placeholder="Rechercher un titre…">
         </div>
         <div class="section-body no-padding"><div class="table-container" id="catBody"></div></div>
+      </div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="page" id="page-telegram">
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="send"></span>Source Telegram</div><span id="tgBadge"></span></div>
+        <div class="section-body">
+          <p class="hint" style="margin-top:0;margin-bottom:16px">L'addon lit les images d'annonce publiées sur un canal Telegram public, les fait lire par l'IA gratuite de Google (Gemini), retrouve chaque titre sur TMDB et l'ajoute aux catalogues « Sorties annoncées ». Rien n'est republié : seuls les titres sont extraits.</p>
+          <div class="opt-grid">
+            <div><div class="t">Canal Telegram</div><div class="d">Nom ou lien du canal public.</div><input class="form-input" id="tgChannel" placeholder="APPROTV ou https://t.me/APPROTV"></div>
+            <div><div class="t">Clé Gemini (gratuite)</div><div class="d">Voir « Obtenir la clé » plus bas.</div><input class="form-input" id="tgKey" type="password" autocomplete="off" placeholder="AIza…"></div>
+            <div><div class="t">Durée dans le catalogue</div><div class="d">Une annonce reste visible ce temps-là.</div><select class="form-input" id="tgKeep"><option value="3">3 jours</option><option value="7">7 jours</option><option value="14">14 jours</option></select></div>
+          </div>
+          <div class="opt-block" style="margin-top:18px">
+            <div class="setting-row"><div><div class="t">Vérifier la disponibilité sur vos trackers</div><div class="d" style="margin-bottom:0">Une annonce passe de « annoncé » à « torrent disponible (1080p, VFQ) » dès qu'un torrent correspondant apparaît sur un de vos trackers (5 vérifications par cycle).</div></div><label class="switch"><input type="checkbox" id="tgBadgeSw"><span></span></label></div>
+          </div>
+          <div class="opt-block">
+            <div class="setting-row"><div><div class="t">Activer la source Telegram</div><div class="d" style="margin-bottom:0">Ajoute deux catalogues dans Stremio : « Sorties annoncées · Films » et « · Séries ». <b>Après activation, désinstallez puis réinstallez l'addon.</b></div></div><label class="switch"><input type="checkbox" id="tgEnable"><span></span></label></div>
+          </div>
+          <div class="section-buttons" style="margin-top:18px">
+            <button class="btn btn-solid" id="tgSave">Enregistrer</button>
+            <button class="btn btn-ghost" id="tgTest"><span data-icon="search"></span>Tester la lecture du canal</button>
+            <button class="btn btn-ghost" id="tgAnalyze"><span data-icon="star"></span>Analyser la dernière image</button>
+            <button class="btn btn-ghost" id="tgRun"><span data-icon="refresh"></span>Lancer un cycle</button>
+            <button class="btn btn-ghost" id="tgReprocess"><span data-icon="replay"></span>Relire les 3 derniers jours</button>
+          </div>
+          <details>
+            <summary>Obtenir la clé Gemini gratuite (2 minutes)</summary>
+            <ol style="padding-left:20px;line-height:1.9;color:var(--text-secondary)">
+              <li>Ouvrez <b>aistudio.google.com/apikey</b> et connectez-vous avec un compte Google.</li>
+              <li>Cliquez sur « Create API key » (créer une clé API).</li>
+              <li>Copiez la clé (elle commence par <code>AIza</code>), collez-la dans le champ ci-dessus, puis « Enregistrer ».</li>
+              <li>Cliquez sur « Analyser la dernière image » : vous voyez ce que l'IA lit, sans rien enregistrer.</li>
+            </ol>
+            <p class="hint">L'offre gratuite de Google a des limites par minute et par jour ; quelques images par jour passent largement. Si la limite est atteinte, l'addon réessaie au cycle suivant.</p>
+          </details>
+          <details>
+            <summary>Options avancées</summary>
+            <div class="t">Modèle Gemini</div><div class="d" style="font-size:13px;color:var(--text-muted);margin-bottom:8px">« gemini-flash-latest » suit automatiquement le dernier modèle Flash gratuit. Changez-le seulement si Google le retire.</div>
+            <div class="input-row"><input class="form-input" id="tgModel" placeholder="gemini-flash-latest"><button class="btn btn-ghost" id="tgModelSave">Enregistrer le modèle</button></div>
+          </details>
+          <div id="tgOut" style="margin-top:16px"></div>
+        </div>
+      </div>
+
+      <div class="section" id="tgReviewSec">
+        <div class="section-header"><div class="section-title"><span data-icon="warning"></span>À vérifier<span class="section-count" id="tgReviewCount"></span></div></div>
+        <div class="section-body" id="tgReview"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><span data-icon="film"></span>Sorties annoncées<span class="section-count" id="tgCount"></span></div>
+          <div class="section-buttons"><button class="btn btn-ghost btn-small" id="tgClear"><span data-icon="trash"></span>Tout effacer</button></div>
+        </div>
+        <div class="section-body no-padding"><div class="table-container" id="tgEntries"></div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="list"></span>Journal Telegram</div><button class="btn btn-ghost btn-small" id="tgReload"><span data-icon="refresh"></span>Actualiser</button></div>
+        <div class="section-body no-padding"><div class="table-container" id="tgLog"></div></div>
       </div>
     </div>
 
@@ -642,6 +705,7 @@ const ICONS = {
   layers: 'M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z',
   key: 'M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
   tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+  send: 'M2.01 21L23 12 2.01 3 2 10l15 2-15 2z',
   bell: 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z',
   block: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z',
   filter: 'M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z',
@@ -713,7 +777,7 @@ async function copy(text) {
 const fullDate = t => new Date(t).toLocaleDateString('fr-FR');
 
 /* ---------- Navigation ---------- */
-const PAGES = ['dashboard', 'trackers', 'catalog', 'log', 'diag', 'settings'];
+const PAGES = ['dashboard', 'trackers', 'catalog', 'telegram', 'log', 'diag', 'settings'];
 let S = null, page = (location.hash || '#dashboard').slice(1);
 function goto(p) {
   if (!PAGES.includes(p)) p = 'dashboard';
@@ -722,6 +786,7 @@ function goto(p) {
   document.querySelectorAll('.page').forEach(x => x.classList.toggle('active', x.id === 'page-' + p));
   if (p === 'catalog') loadCatalog();
   if (p === 'log') loadLog();
+  if (p === 'telegram') loadTg();
   if (p === 'diag') $('#diagQ').focus();
   window.scrollTo(0, 0);
 }
@@ -769,7 +834,8 @@ function renderDashboard() {
     statCard('star', 'warning', 'Animés', c.anime, 'Toutes les versions'),
     statCard('server', act ? 'success' : 'danger', 'Trackers actifs', act + ' / ' + S.trackers.length, act ? '' : 'Aucun tracker actif'),
     statCard('clock', r.busy ? 'primary' : 'success', 'Dernier cycle', r.busy ? 'En cours' : ago(r.last), r.ms ? 'Durée : ' + Math.round(r.ms / 1000) + ' s' + (r.postponed ? ' · ' + r.postponed + ' reporté(s)' : '') : ''),
-    statCard('refresh', st.autoRefreshMin ? 'info' : 'warning', 'Prochaine mise à jour', next, nextSub)
+    statCard('refresh', st.autoRefreshMin ? 'info' : 'warning', 'Prochaine mise à jour', next, nextSub),
+    ...(S.tg.enabled ? [statCard('send', S.tg.lastError ? 'warning' : 'success', 'Annonces Telegram', S.tg.count, S.tg.review ? S.tg.review + ' à vérifier' : S.tg.available + ' avec torrent dispo')] : [])
   );
 
   // dernières sorties
@@ -824,6 +890,8 @@ function renderDashboard() {
   const al = [];
   if (r.last && Date.now() - r.last > 24 * 3600e3) al.push(['warning', 'Données anciennes', 'Aucune mise à jour depuis ' + ago(r.last).replace('il y a ', '') + '. Ouvrez Stremio ou lancez un cycle (vérifiez aussi la fréquence dans Réglages).']);
   if (r.notifyError) al.push(['warning', 'Notifications en erreur', r.notifyError]);
+  if (S.tg.enabled && S.tg.review) al.push(['warning', S.tg.review + ' titre(s) Telegram à vérifier', 'Onglet Telegram : confirmez le bon titre TMDB en un clic.']);
+  if (S.tg.enabled && S.tg.lastError) al.push(['warning', 'Telegram : ' + S.tg.lastError, 'Onglet Telegram : « Tester la lecture du canal » pour diagnostiquer.']);
   if (!S.tmdb.set) al.push(['danger', 'Clé TMDB manquante', 'Ajoutez-la dans Réglages : sans elle, aucun cycle ne peut tourner.']);
   if (!S.trackers.length) al.push(['danger', 'Aucun tracker', 'Ajoutez votre premier tracker dans l\'onglet Trackers.']);
   S.trackers.filter(t => t.status && !t.status.ok).forEach(t => al.push(['warning', 'Tracker « ' + t.name + ' » en erreur', t.status.error]));
@@ -1061,6 +1129,111 @@ $('#ntClearD').onclick = guard(async () => { await api('PUT', '/notify', { clear
 $('#ntClearT').onclick = guard(async () => { await api('PUT', '/notify', { clearTelegram: true }); toast('success', 'Telegram retiré'); await load(false); renderNotify(); });
 $('#optMinRes').onchange = guard(async () => saveSetting({ minRes: +$('#optMinRes').value }, 'Filtre enregistré — utilisez « Retraiter les rejetés » pour retester'));
 $('#wordsSave').onclick = guard(async () => saveSetting({ excludeWords: $('#optWords').value }, 'Mots exclus enregistrés — utilisez « Retraiter les rejetés » pour retester'));
+
+/* ---------- Telegram ---------- */
+let TG = null;
+async function loadTg() {
+  try { TG = await api('GET', '/tg'); } catch (e) { toast('error', 'Erreur', e.message); return; }
+  renderTg();
+}
+function tgBox(title, ...kids) { return h('div', { class: 'diag-card' }, h('div', { class: 'diag-head' }, h('b', {}, title)), ...kids); }
+function renderTg() {
+  const c = TG.config, st = TG.st;
+  $('#tgChannel').value = c.channel; $('#tgKey').value = '';
+  $('#tgKey').placeholder = c.keyHint ? 'Clé enregistrée (' + c.keyHint + ') — vide = inchangée' : 'AIza…';
+  $('#tgKeep').value = String(c.keepDays); $('#tgBadgeSw').checked = c.badge; $('#tgEnable').checked = c.enabled; $('#tgModel').value = c.model;
+  $('#tgBadge').replaceChildren(h('span', { class: 'badge ' + (c.enabled ? (st.lastError ? 'warning' : 'success') : 'muted'), title: st.lastError || '' },
+    c.enabled ? (st.lastError ? 'Active — erreur' : 'Active') : 'Désactivée'), st.lastRun ? h('small', { style: 'margin-left:10px;color:var(--text-muted)' }, 'dernière lecture ' + ago(st.lastRun)) : '');
+
+  // à vérifier
+  $('#tgReviewSec').hidden = !TG.review.length;
+  $('#tgReviewCount').textContent = TG.review.length ? TG.review.length + ' titre(s)' : '';
+  $('#tgReview').replaceChildren(...TG.review.map(r => {
+    const kind = h('select', { class: 'form-input', style: 'min-width:110px' }, h('option', { value: 'tv' }, 'Série'), h('option', { value: 'movie' }, 'Film'));
+    if (r.read.type === 'movie') kind.value = 'movie';
+    const tid = h('input', { class: 'form-input', style: 'max-width:150px', placeholder: 'ID TMDB', inputmode: 'numeric' });
+    const send = body => guard(async () => { await api('POST', '/tg/review', { id: r.id, ...body }); toast('success', 'Enregistré'); await loadTg(); })();
+    const ep = r.read.season != null ? 'S' + String(r.read.season).padStart(2, '0') + (r.read.episode != null ? 'E' + String(r.read.episode).padStart(2, '0') : '') : '';
+    return h('div', { class: 'diag-card' },
+      h('div', { class: 'diag-head' }, h('span', { class: 'badge warning' }, 'À vérifier'), h('b', {}, r.read.title), h('small', { style: 'color:var(--text-muted)' }, [ep, r.date, r.read.note].filter(Boolean).join(' · '))),
+      h('div', { class: 'diag-info' }, r.reason),
+      r.image ? h('a', { href: r.image, target: '_blank', rel: 'noopener' }, h('img', { src: r.image, referrerpolicy: 'no-referrer', alt: '', style: 'max-height:130px;border-radius:8px;margin-bottom:10px;display:block' })) : '',
+      h('div', { class: 'row-actions', style: 'justify-content:flex-start;flex-wrap:wrap;margin-bottom:10px' },
+        ...r.candidates.map((cd, i) => h('button', { class: 'btn btn-primary btn-small', onclick: () => send({ action: 'accept', index: i }) }, (cd.kind === 'movie' ? 'Film : ' : 'Série : ') + cd.name + ' (' + (cd.year || '?') + ') · ' + Math.round(cd.score * 100) + ' %'))),
+      h('div', { class: 'row-actions', style: 'justify-content:flex-start;flex-wrap:wrap' }, kind, tid,
+        h('button', { class: 'btn btn-ghost btn-small', onclick: () => send({ action: 'manual', kind: kind.value, tmdbId: tid.value }) }, 'Valider cet ID TMDB'),
+        h('button', { class: 'btn btn-ghost btn-small', onclick: () => send({ action: 'ignore' }) }, 'Ignorer')));
+  }));
+
+  // annonces
+  $('#tgCount').textContent = TG.entries.length ? TG.entries.length + ' titre(s)' : '';
+  $('#tgEntries').replaceChildren(TG.entries.length ? h('table', {}, h('thead', {}, h('tr', {}, ['', 'Type', 'Titre', 'Détail', 'État', 'IMDb', ''].map(x => h('th', {}, x)))),
+    h('tbody', {}, TG.entries.map(i => h('tr', {},
+      h('td', { style: 'width:52px' }, i.poster ? h('img', { class: 'thumb', src: i.poster, loading: 'lazy', alt: '' }) : ''),
+      h('td', {}, h('span', { class: 'badge ' + (i.anime ? 'warning' : i.type === 'movie' ? 'primary' : 'info') }, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série')),
+      h('td', {}, h('b', {}, i.name), i.year ? h('small', {}, ' (' + i.year + ')') : ''), h('td', {}, h('small', {}, i.desc)),
+      h('td', {}, h('span', { class: 'badge ' + (i.status === 'available' ? 'success' : 'muted') }, i.status === 'available' ? 'Torrent dispo' : 'Annoncé')),
+      h('td', {}, h('a', { class: 'btn-icon', href: 'https://www.imdb.com/title/' + i.id + '/', target: '_blank', rel: 'noopener', title: 'Ouvrir sur IMDb' }, icon('link'))),
+      h('td', {}, h('div', { class: 'row-actions' },
+        h('button', { class: 'btn-icon danger', title: 'Masquer définitivement ce titre', onclick: guard(async () => {
+          if (!(await confirmBox({ title: 'Masquer ce titre pour toujours ?', message: '« ' + i.name + ' » ne réapparaîtra dans aucun catalogue. Vous pourrez le débloquer dans Réglages > Filtres.', yes: 'Masquer' }))) return;
+          await api('POST', '/block', { id: i.id, type: i.type, name: i.name }); toast('success', 'Titre masqué'); await loadTg();
+        }) }, icon('block')),
+        h('button', { class: 'btn-icon danger', title: 'Retirer du catalogue', onclick: guard(async () => { await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadTg(); }) }, icon('trash')))))))) :
+    h('div', { class: 'empty' }, c.enabled ? 'Aucune annonce pour le moment. Cliquez sur « Lancer un cycle » ou attendez la prochaine publication du canal.' : 'Activez la source Telegram ci-dessus pour remplir cette liste.'));
+
+  // journal
+  const tone = { ok: ['success', 'Ajouté'], review: ['warning', 'À vérifier'], err: ['danger', 'Erreur'], info: ['muted', 'Info'] };
+  $('#tgLog').replaceChildren(TG.log.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Type', 'Publication', 'Détail'].map(x => h('th', {}, x)))),
+    h('tbody', {}, TG.log.slice(0, 40).map(x => h('tr', {}, h('td', {}, h('small', {}, ago(x.t))), h('td', {}, h('span', { class: 'badge ' + (tone[x.kind] || tone.info)[0] }, (tone[x.kind] || tone.info)[1])),
+      h('td', {}, x.post ? h('code', {}, '#' + x.post) : ''), h('td', {}, x.text))))) : h('div', { class: 'empty' }, 'Le journal est vide.'));
+}
+const tgSettings = async patch => { await api('PUT', '/tg/config', patch); toast('success', 'Enregistré'); await loadTg(); await load(false); };
+$('#tgSave').onclick = guard(async () => {
+  await tgSettings({ channel: $('#tgChannel').value, geminiKey: $('#tgKey').value, keepDays: +$('#tgKeep').value, badge: $('#tgBadgeSw').checked, enabled: $('#tgEnable').checked });
+});
+$('#tgModelSave').onclick = guard(async () => tgSettings({ model: $('#tgModel').value }));
+$('#tgReload').onclick = guard(loadTg);
+$('#tgTest').onclick = guard(async () => {
+  const b = $('#tgTest'); b.disabled = true;
+  try {
+    const r = await api('POST', '/tg/test');
+    $('#tgOut').replaceChildren(tgBox(r.ok ? 'Lecture du canal : OK' : 'Lecture du canal : échec',
+      h('div', { class: 'diag-info' }, h('span', { class: 'badge ' + (r.ok ? 'success' : 'danger') }, r.ok ? 'OK' : 'Échec'), ' ' + r.message),
+      r.latest ? h('div', {}, h('div', { class: 'hint', style: 'margin:0 0 8px' }, 'Dernière image : publication #' + r.latest.id + (r.latest.date ? ' · ' + ago(r.latest.date) : '')),
+        h('img', { src: r.latest.image, referrerpolicy: 'no-referrer', alt: '', style: 'max-height:200px;border-radius:8px' })) : ''));
+  } finally { b.disabled = false; }
+});
+$('#tgAnalyze').onclick = guard(async () => {
+  const b = $('#tgAnalyze'); b.disabled = true;
+  $('#tgOut').replaceChildren(tgBox('Analyse en cours…', h('div', { class: 'hint', style: 'margin:0' }, 'Lecture de l\'image par Gemini puis recherche sur TMDB (10 à 30 secondes).')));
+  try {
+    const r = await api('POST', '/tg/analyze');
+    $('#tgOut').replaceChildren(tgBox('Essai sur la dernière image (publication #' + r.post.id + ') — rien n\'est enregistré',
+      h('img', { src: r.post.image, referrerpolicy: 'no-referrer', alt: '', style: 'max-height:180px;border-radius:8px;margin-bottom:12px;display:block' }),
+      r.general ? h('div', { class: 'hint', style: 'margin:0 0 10px' }, 'Date générale lue sur l\'image : ' + r.general) : '',
+      r.rows.length ? h('div', { class: 'table-container' }, h('table', {}, h('thead', {}, h('tr', {}, ['Lu sur l\'image', 'Type', 'Résultat', 'Détail'].map(x => h('th', {}, x)))),
+        h('tbody', {}, r.rows.map(x => h('tr', {}, h('td', {}, h('b', {}, x.read.title), x.read.season != null ? h('small', {}, ' S' + String(x.read.season).padStart(2, '0') + (x.read.episode != null ? 'E' + String(x.read.episode).padStart(2, '0') : '')) : ''),
+          h('td', {}, x.read.type === 'movie' ? 'Film' : x.read.type === 'series' ? 'Série' : '?'),
+          h('td', {}, h('span', { class: 'badge ' + (x.auto ? 'success' : 'warning') }, x.auto ? 'Ajout auto' : 'À vérifier')),
+          h('td', {}, h('small', {}, x.auto ? x.chosen : (x.reason || '') + (x.candidates.length ? ' — ' + x.candidates.map(c => c.name + ' (' + (c.year || '?') + ')').join(', ') : ''))))))))
+        : h('div', { class: 'empty' }, 'Aucun titre lisible sur cette image.')));
+  } catch (e) { $('#tgOut').replaceChildren(tgBox('Analyse impossible', h('div', { class: 'diag-info' }, h('span', { class: 'badge danger' }, 'Erreur'), ' ' + e.message))); } finally { b.disabled = false; }
+});
+$('#tgRun').onclick = guard(async () => {
+  const b = $('#tgRun'); b.disabled = true; b.firstChild.classList.add('spin');
+  toast('info', 'Cycle lancé', 'Jusqu\'à ' + (S ? S.run.budgetS : 50) + ' s — ne fermez pas la page.');
+  try { const x = await api('POST', '/refresh'); toast(x.skipped ? 'warning' : x.ok === false ? 'error' : 'success', x.skipped ? 'Cycle non lancé' : x.ok === false ? 'Erreur' : 'Cycle terminé', x.message); }
+  finally { b.firstChild.classList.remove('spin'); b.disabled = false; await loadTg(); await load(false); }
+});
+$('#tgReprocess').onclick = guard(async () => {
+  if (!(await confirmBox({ title: 'Relire les derniers jours ?', message: 'Les images des 3 derniers jours seront relues au prochain cycle (les doublons ne sont pas recréés).', yes: 'Relire', danger: false }))) return;
+  await api('POST', '/tg/reprocess'); toast('success', 'Prévu au prochain cycle', 'Cliquez sur « Lancer un cycle ».');
+});
+$('#tgClear').onclick = guard(async () => {
+  if (!(await confirmBox({ title: 'Tout effacer ?', message: 'La liste des annonces, la file « À vérifier » et le journal Telegram sont vidés.', yes: 'Effacer' }))) return;
+  await api('POST', '/tg/clear'); toast('success', 'Effacé'); await loadTg(); await load(false);
+});
 
 /* ---------- Installation (modale) ---------- */
 function renderInstall() {

@@ -22,6 +22,7 @@ const http = require('http');
 const crypto = require('crypto');
 const { addonBuilder } = require('stremio-addon-sdk');
 const kv = require('./lib/storage');
+const tgm = require('./lib/telegram');
 let waitUntil = null; // Vercel : permet de terminer un cycle après avoir répondu à Stremio
 try { waitUntil = require('@vercel/functions').waitUntil; } catch { /* hors Vercel */ }
 
@@ -42,7 +43,7 @@ const MOVIE_CATS = '2000,2010,2030,2060,2070,2080,2090';
 const SERIES_CATS = '5000,5070,5080';
 const LANGS = ['all', 'vf', 'vff'];
 const LANG_NAMES = { all: 'Toutes les versions', vf: 'VF (VFQ incluse)', vff: 'VFF / VF2 uniquement' };
-const KEY = { config: 'sr:config', run: 'sr:run', lock: 'sr:lock', dvds: 'sr:dvds', log: 'sr:log', auto: 'sr:auto', new: l => 'sr:new:' + l, newseen: 'sr:newseen', notified: 'sr:notified', runs: 'sr:runs', items: l => 'sr:items:' + l, seen: l => 'sr:seen:' + l };
+const KEY = { config: 'sr:config', run: 'sr:run', lock: 'sr:lock', dvds: 'sr:dvds', log: 'sr:log', auto: 'sr:auto', new: l => 'sr:new:' + l, newseen: 'sr:newseen', notified: 'sr:notified', runs: 'sr:runs', tg: 'sr:tg', tgitems: 'sr:tgitems', tgreview: 'sr:tgreview', tglog: 'sr:tglog', items: l => 'sr:items:' + l, seen: l => 'sr:seen:' + l };
 
 const log = (...a) => console.log(...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -67,6 +68,8 @@ async function getConfig(force) {
     newTorrents: c.newTorrents === undefined ? true : !!c.newTorrents, // catalogues « Nouveaux torrents »
     newHours: pick(LISTS.newHours, c.newHours, 24), newHideCam: c.newHideCam === undefined ? true : !!c.newHideCam,
     minRes: pick(LISTS.minRes, c.minRes, 0), excludeWords: String(c.excludeWords || '').slice(0, 500), // filtres de qualité / mots exclus
+    tg: { enabled: !!(c.tg && c.tg.enabled), channel: tgm.CHANNEL_RE.test((c.tg || {}).channel || '') ? c.tg.channel : 'APPROTV', geminiKey: String((c.tg || {}).geminiKey || ''),
+      model: /^[\w.\-]{3,60}$/.test((c.tg || {}).model || '') ? c.tg.model : 'gemini-flash-latest', keepDays: pick([3, 7, 14], (c.tg || {}).keepDays, 7), badge: !c.tg || c.tg.badge !== false },
     blocked: Array.isArray(c.blocked) ? c.blocked.slice(0, 300) : [],                                  // titres masqués définitivement
     notify: { discord: String((c.notify || {}).discord || ''), telegramToken: String((c.notify || {}).telegramToken || ''), telegramChat: String((c.notify || {}).telegramChat || ''),
       onValid: !c.notify || c.notify.onValid !== false, onNew: !!(c.notify && c.notify.onNew) },
@@ -521,6 +524,166 @@ async function runNotify(cfg, valid, fresh) {
   return errs.length ? [...new Set(errs)].join(' ; ') : null;
 }
 
+/* ------------------------------------------------------------------ annonces Telegram (images lues par Gemini) */
+const TG_NOIMDB = "pas d'ID IMDb sur TMDB";
+const pad2 = n => String(n).padStart(2, '0');
+function tgDesc(e) { // texte affiché : épisode, date de sortie, état
+  const st = e.status === 'available' ? 'torrent disponible' + (e.avail && e.avail.q ? ' (' + e.avail.q + (e.avail.label ? ' · ' + e.avail.label : '') + ')' : '') : 'annoncé';
+  const label = e.type === 'series' && e.season != null ? 'S' + pad2(e.season) + (e.episode != null ? 'E' + pad2(e.episode) : '') : '';
+  return label ? [label, 'sortie le ' + fmt(e.date), st].join(' · ') : ['Sortie le ' + fmt(e.date), st].join(' · ');
+}
+async function tgCandidates(env, it) { // résultats TMDB pour un titre lu sur l'image, du plus proche au moins proche
+  const kinds = it.season != null || it.type === 'series' ? ['tv'] : it.type === 'movie' ? ['movie'] : ['movie', 'tv'];
+  const out = [];
+  for (const k of kinds) {
+    const r = await tmdb(env, '/search/' + k, { query: it.title, include_adult: 'false' });
+    for (const x of ((r && r.results) || []).slice(0, 6)) {
+      const name = x.title || x.name || '', orig = x.original_title || x.original_name || '';
+      out.push({ kind: k, id: x.id, name, orig, year: (x.release_date || x.first_air_date || '').slice(0, 4), poster: x.poster_path ? IMG + x.poster_path : null,
+        pop: x.popularity || 0, score: Math.max(tgm.sim(it.title, name), tgm.sim(it.title, orig)) });
+    }
+  }
+  return out.sort((a, b) => b.score - a.score || b.pop - a.pop).slice(0, 5);
+}
+function tgDecide(cands) { // zéro faux positif : au moindre doute, le titre part dans « À vérifier »
+  const top = cands[0];
+  if (!top) return { reason: 'aucun résultat sur TMDB' };
+  if (top.score < 0.88) return { reason: 'titre proche mais incertain (' + Math.round(top.score * 100) + ' % de ressemblance avec « ' + top.name + ' »)' };
+  const rivals = cands.filter(c => !(c.kind === top.kind && c.id === top.id) && c.score >= top.score - 0.06);
+  if (!rivals.length) return { cand: top };
+  const yr = new Date().getFullYear(), recent = [top, ...rivals].filter(c => +c.year >= yr - 1); // une annonce de sortie concerne un titre récent
+  if (recent.length === 1) return { cand: recent[0] };
+  return { reason: 'plusieurs titres possibles : ' + [top, ...rivals].slice(0, 3).map(c => c.name + ' (' + (c.year || '?') + ')').join(' / ') };
+}
+async function tgBuild(env, cand, it, dateMs, post, force) { // entrée de catalogue à partir d'un titre TMDB choisi
+  const ts = Number.isFinite(post.date) ? post.date : Date.now();
+  if (cand.kind === 'movie') {
+    const d = await tmdb(env, '/movie/' + cand.id, { append_to_response: 'external_ids' });
+    const imdb = d && (d.imdb_id || (d.external_ids && d.external_ids.imdb_id));
+    if (!imdb) return { reason: TG_NOIMDB };
+    const e = { id: imdb, type: 'movie', anime: false, name: d.title || d.original_title, orig: d.original_title || '', poster: d.poster_path ? IMG + d.poster_path : undefined,
+      year: (d.release_date || '').slice(0, 4), ts, date: dateMs, season: null, episode: null, src: 'tg', status: 'announced', tmdb: cand.id, post: post.id };
+    e.desc = tgDesc(e); return { entry: e };
+  }
+  const d = await tmdb(env, '/tv/' + cand.id, { append_to_response: 'external_ids' });
+  const imdb = d && d.external_ids && d.external_ids.imdb_id;
+  if (!imdb) return { reason: TG_NOIMDB };
+  if (!force && it.season != null && it.episode != null) { // l'épisode annoncé doit exister à une date cohérente
+    const ep = await tmdb(env, `/tv/${cand.id}/season/${it.season}/episode/${it.episode}`);
+    const air = ep && Date.parse(ep.air_date);
+    if (air && Math.abs(air - dateMs) > 3 * DAY) return { reason: 'S' + pad2(it.season) + 'E' + pad2(it.episode) + ' diffusé le ' + fmt(air) + ' sur TMDB, mais annoncé le ' + fmt(dateMs) };
+  }
+  const anime = (d.genres || []).some(g => g.id === 16) && (d.original_language === 'ja' || (d.origin_country || []).includes('JP'));
+  const e = { id: imdb, type: 'series', anime, name: d.name || d.original_name, orig: d.original_name || '', poster: d.poster_path ? IMG + d.poster_path : undefined,
+    year: (d.first_air_date || '').slice(0, 4), ts, date: dateMs, season: it.season, episode: it.episode, src: 'tg', status: 'announced', tmdb: cand.id, post: post.id };
+  e.desc = tgDesc(e); return { entry: e };
+}
+function addTg(list, e) { // un titre n'apparaît qu'une fois ; une série remonte avec son épisode le plus récent
+  const i = list.findIndex(x => x.id === e.id && x.type === e.type);
+  if (i >= 0) {
+    const o = list[i];
+    const newer = e.date > o.date || (e.date === o.date && ((e.season || 0) > (o.season || 0) || ((e.season || 0) === (o.season || 0) && (e.episode || 0) > (o.episode || 0))));
+    if (!newer) return false;
+    list.splice(i, 1);
+  }
+  list.push(e); list.sort((a, b) => b.date - a.date || b.ts - a.ts);
+  return true;
+}
+// Les titres annoncés sont-ils déjà sur un tracker ? (au plus 5 vérifications par cycle, les moins récemment testées d'abord)
+async function tgAvailability(cfg, items, trackers, deadline, out, note) {
+  const now = Date.now(), words = wordsOf(cfg.excludeWords);
+  const cand = items.filter(e => e.status !== 'available' && e.date <= now + 18 * HOUR && (e.type === 'movie' || e.season != null))
+    .sort((a, b) => (a.checked || 0) - (b.checked || 0)).slice(0, 5);
+  for (const e of cand) {
+    if (Date.now() > deadline) break;
+    e.checked = Date.now(); out.checked++;
+    let best = null;
+    for (const q of [...new Set([e.name, e.orig].filter(Boolean))]) {
+      for (const tr of trackers) {
+        try {
+          const its = parseTorznab(await trackerGet(tzUrl(tr, { t: 'search', q, cat: e.type === 'movie' ? MOVIE_CATS : SERIES_CATS, limit: 50 })));
+          for (const x of its) {
+            const rel = parseRelease(x.title);
+            if ((rel.cam && cfg.newHideCam) || filterReason(words, cfg.minRes, x.title)) continue;
+            if (Math.max(tgm.sim(rel.name, e.name), tgm.sim(rel.name, e.orig || '')) < 0.9) continue;
+            if (e.type === 'series') { if (rel.season !== e.season || (e.episode != null && rel.episode !== e.episode)) continue; }
+            else if (rel.year && e.year && Math.abs(rel.year - +e.year) > 1) continue;
+            const r = resOf(x.title) || 0;
+            if (!best || r > best.r) best = { r, q: qualityOf(x.title), label: rel.label, tr: tr.name, pub: x.pub || null };
+          }
+        } catch (err) { note('err', 'Disponibilité (' + tr.name + ') : ' + err.message); }
+      }
+      if (best) break; // le premier titre qui correspond suffit
+    }
+    if (best) { e.status = 'available'; e.avail = { q: best.q, label: best.label, tr: best.tr, pub: best.pub }; e.desc = tgDesc(e); out.found++; note('ok', '« ' + e.name + ' » : torrent disponible sur ' + best.tr + ' (' + best.q + ')'); }
+  }
+}
+// Lit les nouvelles images du canal, les fait analyser, rapproche les titres de TMDB et met à jour le catalogue.
+async function telegramCycle(cfg, trackers, deadline) {
+  const tg = cfg.tg, out = { fresh: [], posts: 0, read: 0, auto: 0, review: 0, checked: 0, found: 0, error: null };
+  if (!tg.enabled || !tg.geminiKey) return out;
+  const now = Date.now(), logs = [], blocked = blockedSet(cfg);
+  const st = (await kv.get(KEY.tg)) || { lastId: 0 };
+  st.tries = st.tries || {};
+  let items = (await kv.get(KEY.tgitems)) || [], review = (await kv.get(KEY.tgreview)) || [];
+  const env = { m: cfg.tmdbKey, trackers, rules: rulesOf(cfg) };
+  const note = (kind, text, post) => logs.push({ t: Date.now(), kind, text, post: post || null });
+  try {
+    const posts = await tgm.fetchChannel(tg.channel);
+    st.lastSeen = posts[posts.length - 1].id;
+    let todo = posts.filter(p => p.images.length && p.id > st.lastId);
+    if (!st.lastId) todo = todo.filter(p => p.date > now - 3 * DAY).slice(-5); // premier passage : seulement le récent
+    out.posts = todo.length;
+    for (const p of todo) {
+      if (Date.now() > deadline) break;
+      let failed = null;
+      for (const imgUrl of p.images.slice(0, 3)) {
+        try {
+          const img = await tgm.downloadImage(imgUrl);
+          const read = await tgm.readImage(tg.geminiKey, tg.model, img, tgm.parisDate(now));
+          out.read += read.items.length;
+          if (!read.items.length) note('info', 'Aucun titre lisible sur l\'image', p.id);
+          for (const it of read.items) {
+            const dateStr = it.date || read.general || tgm.parisDate(Number.isFinite(p.date) ? p.date : now);
+            const dateMs = Date.parse(dateStr + 'T00:00:00Z');
+            if (isNaN(dateMs)) { note('err', 'Date illisible pour « ' + it.title + ' »', p.id); continue; }
+            const cands = await tgCandidates(env, it), dec = tgDecide(cands);
+            let reason = dec.reason, entry = null;
+            if (dec.cand) { const b = await tgBuild(env, dec.cand, it, dateMs, p); if (b.entry) entry = b.entry; else reason = b.reason; }
+            if (entry) {
+              if (blocked.has(entry.type + ':' + entry.id)) { note('info', '« ' + entry.name + ' » est masqué', p.id); continue; }
+              if (addTg(items, entry)) out.fresh.push(entry);
+              out.auto++; note('ok', '« ' + it.title + ' » → ' + entry.name + ' (' + entry.desc + ')', p.id);
+            } else if (reason === TG_NOIMDB) note('info', '« ' + it.title + ' » ignoré : ' + reason, p.id);
+            else {
+              const rid = p.id + ':' + tgm.fold(it.title).slice(0, 40);
+              if (!review.some(x => x.id === rid)) {
+                review.unshift({ id: rid, post: p.id, ts: Number.isFinite(p.date) ? p.date : now, date: dateStr, read: it, reason: reason || 'incertain', image: imgUrl,
+                  candidates: cands.slice(0, 4).map(c => ({ kind: c.kind, id: c.id, name: c.name, year: c.year, poster: c.poster, score: Math.round(c.score * 100) / 100 })) });
+                out.review++;
+              }
+              note('review', '« ' + it.title + ' » à vérifier : ' + reason, p.id);
+            }
+          }
+        } catch (e) { failed = e; if (e.quota) break; }
+      }
+      if (failed) {
+        st.tries[p.id] = (st.tries[p.id] || 0) + 1; out.error = failed.message; note('err', failed.message, p.id);
+        if (failed.quota || st.tries[p.id] < 3) break; // on réessaiera au prochain cycle
+        note('err', 'Publication abandonnée après 3 essais', p.id);
+      }
+      st.lastId = p.id; delete st.tries[p.id];
+    }
+  } catch (e) { out.error = e.message; note('err', e.message); }
+  items = items.filter(x => x.ts > now - tg.keepDays * DAY);
+  review = review.filter(x => x.ts > now - 14 * DAY).slice(0, 50);
+  if (tg.badge && trackers.length) { try { await tgAvailability(cfg, items, trackers, deadline, out, note); } catch (e) { note('err', 'Disponibilité : ' + e.message); } }
+  st.lastRun = Date.now(); st.lastError = out.error;
+  await kv.set(KEY.tg, st); await kv.set(KEY.tgitems, items); await kv.set(KEY.tgreview, review);
+  if (logs.length) await kv.set(KEY.tglog, logs.reverse().concat((await kv.get(KEY.tglog)) || []).slice(0, 80));
+  return out;
+}
+
 /* ------------------------------------------------------------------ cycle de mise à jour (borné dans le temps) */
 function addEntry(st, e) {
   const i = st.items.findIndex(x => x.id === e.id && x.type === e.type);
@@ -539,9 +702,21 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
     const cfg = await getConfig(true);
     const trackers = cfg.trackers.filter(t => t.enabled);
     if (!cfg.tmdbKey) return { skipped: true, message: 'Clé TMDB manquante : ajoutez-la dans l\'onglet Réglages.' };
-    if (!trackers.length) return { skipped: true, message: 'Aucun tracker actif : ajoutez-en un dans l\'onglet Trackers.' };
+    const tgActive = cfg.tg.enabled && !!cfg.tg.geminiKey;
+    if (!trackers.length && !tgActive) return { skipped: true, message: 'Aucun tracker actif : ajoutez-en un dans l\'onglet Trackers.' };
     const run = (await kv.get(KEY.run)) || {};
     run.trackerStatus = {};
+    let tgOut = { fresh: [] };
+    if (tgActive) { // source Telegram : lue en premier (au plus 25 s)
+      try { tgOut = await telegramCycle(cfg, trackers, Math.min(deadline, Date.now() + 25000)); } catch (e) { tgOut = { fresh: [], error: e.message }; }
+      run.tg = { t: Date.now(), error: tgOut.error || null, posts: tgOut.posts || 0, read: tgOut.read || 0, auto: tgOut.auto || 0, review: tgOut.review || 0, found: tgOut.found || 0 };
+    }
+    if (!trackers.length) { // Telegram seul
+      let ne = null; try { ne = await runNotify(cfg, tgOut.fresh, []); } catch (e) { ne = e.message; }
+      Object.assign(run, { last: Date.now(), ms: Date.now() - t0, notifyError: ne });
+      await kv.set(KEY.run, run);
+      return { ok: !tgOut.error, message: 'Telegram : ' + (tgOut.read || 0) + ' titre(s) lu(s), ' + (tgOut.auto || 0) + ' ajouté(s)' + (tgOut.review ? ', ' + tgOut.review + ' à vérifier' : '') + (tgOut.error ? ' — ' + tgOut.error : '') };
+    }
     const list = [];
     for (const tr of trackers) {
       const stt = run.trackerStatus[tr.id] = { last: Date.now(), ok: true, count: 0, error: null };
@@ -612,14 +787,14 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
       await kv.set(KEY.newseen, newSeen);
     }
     let notifyError = null;
-    try { notifyError = await runNotify(cfg, freshValid, freshNew); } catch (e) { notifyError = e.message; }
+    try { notifyError = await runNotify(cfg, freshValid.concat(tgOut.fresh), freshNew); } catch (e) { notifyError = e.message; }
     if (journal.length) { journal.sort((a, b) => b.t - a.t); await kv.set(KEY.log, journal.concat((await kv.get(KEY.log)) || []).slice(0, 400)); }
     Object.assign(run, { last: Date.now(), ms: Date.now() - t0, stats, postponed, dvds: dvdsCount, notifyError });
     await kv.set(KEY.run, run);
     const hist = (await kv.get(KEY.runs)) || [];
     hist.unshift({ t: run.last, ms: run.ms, ok: Object.fromEntries(LANGS.map(l => [l, stats[l].ok])), neuf: stats.all.neuf, err: LANGS.reduce((a, l) => a + stats[l].err, 0), postponed });
     await kv.set(KEY.runs, hist.slice(0, 20));
-    const msg = LANGS.map(l => `${l} +${stats[l].ok}`).join('  ') + (postponed ? `  (${postponed} torrent(s) reporté(s) au prochain cycle)` : '');
+    const msg = LANGS.map(l => `${l} +${stats[l].ok}`).join('  ') + (run.tg ? `  Telegram +${run.tg.auto}` + (run.tg.review ? ` (${run.tg.review} à vérifier)` : '') + (run.tg.error ? ` [${run.tg.error}]` : '') : '') + (postponed ? `  (${postponed} torrent(s) reporté(s) au prochain cycle)` : '');
     log('cycle terminé en', Math.round(run.ms / 1000), 's :', msg);
     return { ok: true, message: 'Cycle terminé : ' + msg, postponed };
   } catch (e) {
@@ -638,6 +813,10 @@ const NEW_CATALOGS = [
   { type: 'movie', id: 'sr-new-films', name: 'Nouveaux torrents · Films' },
   { type: 'series', id: 'sr-new-series', name: 'Nouveaux torrents · Séries' },
 ];
+const TG_CATALOGS = [
+  { type: 'movie', id: 'sr-tg-films', name: 'Sorties annoncées · Films' },
+  { type: 'series', id: 'sr-tg-series', name: 'Sorties annoncées · Séries' },
+];
 function buildManifest(lang, cfg) {
   const streamInfo = cfg.streamInfo;
   const m = {
@@ -645,7 +824,7 @@ function buildManifest(lang, cfg) {
     description: 'Catalogues des films, séries et animés qui viennent de sortir en torrent — ' + LANG_NAMES[lang] + '.',
     resources: streamInfo ? ['catalog', 'stream'] : ['catalog'],
     types: ['movie', 'series'],
-    catalogs: CATALOGS.concat(cfg.newTorrents ? NEW_CATALOGS : []).map(c => ({ ...c, extra: [{ name: 'skip' }] })),
+    catalogs: CATALOGS.concat(cfg.newTorrents ? NEW_CATALOGS : [], cfg.tg.enabled ? TG_CATALOGS : []).map(c => ({ ...c, extra: [{ name: 'skip' }] })),
     behaviorHints: { configurable: true },
   };
   if (streamInfo) m.idPrefixes = ['tt'];
@@ -669,10 +848,11 @@ function displayName(x, format) { // titre affiché sous l'affiche dans Stremio
 }
 async function catalog(lang, id, skip) {
   const cfg = await getConfig(), format = cfg.titleFormat;
-  const fresh = id.startsWith('sr-new');
+  const fresh = id.startsWith('sr-new'), tgc = id.startsWith('sr-tg');
   if (fresh && !cfg.newTorrents) return [];
-  const items = (await kv.get(fresh ? KEY.new(lang) : KEY.items(lang))) || [];
-  const list = unblocked(cfg, fresh ? items.filter(x => x.ts > Date.now() - cfg.newHours * HOUR && (id === 'sr-new-films' ? x.type === 'movie' : x.type === 'series'))
+  if (tgc && !cfg.tg.enabled) return [];
+  const items = (await kv.get(tgc ? KEY.tgitems : fresh ? KEY.new(lang) : KEY.items(lang))) || [];
+  const list = unblocked(cfg, tgc ? items.filter(x => x.ts > Date.now() - cfg.tg.keepDays * DAY && (id === 'sr-tg-films' ? x.type === 'movie' : x.type === 'series')) : fresh ? items.filter(x => x.ts > Date.now() - cfg.newHours * HOUR && (id === 'sr-new-films' ? x.type === 'movie' : x.type === 'series'))
     : items.filter(x => id === 'sr-films' ? x.type === 'movie' : id === 'sr-animes' ? x.type === 'series' && x.anime : x.type === 'series' && !x.anime));
   return list.slice(skip, skip + PAGE).map(x => ({
     id: x.id, type: x.type, name: displayName(x, format), poster: x.poster, releaseInfo: x.year || undefined, description: x.desc,
@@ -681,20 +861,22 @@ async function catalog(lang, id, skip) {
 async function streamsFor(lang, type, id) { // ligne d'information (option du dashboard) : ce n'est pas un flux lisible
   const [imdb, s, e] = id.split(':');
   let en = ((await kv.get(KEY.items(lang))) || []).find(x => x.id === imdb && x.type === type), nouveau = false;
-  if (!en) { en = ((await kv.get(KEY.new(lang))) || []).find(x => x.id === imdb && x.type === type); nouveau = true; }
+  if (!en) { en = ((await kv.get(KEY.new(lang))) || []).find(x => x.id === imdb && x.type === type); nouveau = !!en; }
+  let annonce = false;
+  if (!en) { en = ((await kv.get(KEY.tgitems)) || []).find(x => x.id === imdb && x.type === type); annonce = !!en; }
   if (!en) return [];
   if (type === 'series') {
     if (en.season != null && s != null && +s !== en.season) return [];
     if (en.episode != null && e != null && +e !== en.episode) return [];
   }
-  return [{ name: nouveau ? '⏱ Nouveau torrent' : '🆕 Sortie récente', description: en.desc, externalUrl: `stremio:///detail/${type}/${imdb}` }];
+  return [{ name: annonce ? (en.status === 'available' ? '✅ Torrent disponible' : '📣 Sortie annoncée') : nouveau ? '⏱ Nouveau torrent' : '🆕 Sortie récente', description: en.desc, externalUrl: `stremio:///detail/${type}/${imdb}` }];
 }
 
 // Mise à jour automatique : quand Stremio charge un catalogue et que le dernier essai date de plus de N minutes
 async function maybeAutoRefresh() {
   try {
     const cfg = await getConfig();
-    if (!cfg.autoRefreshMin || !cfg.tmdbKey || !cfg.trackers.some(t => t.enabled)) return;
+    if (!cfg.autoRefreshMin || !cfg.tmdbKey || !(cfg.trackers.some(t => t.enabled) || (cfg.tg.enabled && cfg.tg.geminiKey))) return;
     if (!(await kv.setNx(KEY.auto, Date.now(), cfg.autoRefreshMin * 60))) return; // déjà tenté récemment
     const p = cycle().catch(e => log('auto :', e.message));
     if (waitUntil) waitUntil(p);
@@ -729,6 +911,7 @@ const core = {
     const newAll = cfg.newTorrents ? unblocked(cfg, ((await kv.get(KEY.new('all'))) || []).filter(x => x.ts > Date.now() - cfg.newHours * HOUR)) : [];
     const history = (await kv.get(KEY.runs)) || [];
     const nf = cfg.notify, ch = channelsOf(nf);
+    const tgst = (await kv.get(KEY.tg)) || {}, tgItems = unblocked(cfg, (await kv.get(KEY.tgitems)) || []), tgReview = (await kv.get(KEY.tgreview)) || [];
     return {
       langs: LANG_NAMES,
       trackers: cfg.trackers.map(t => ({ id: t.id, name: t.name, url: t.url, keyHint: mask(t.apikey), enabled: t.enabled, status: (run.trackerStatus || {})[t.id] || null })),
@@ -737,6 +920,7 @@ const core = {
       latest: latestAll.slice(0, 8).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, desc: x.desc, ts: x.ts, poster: x.poster })),
       newest: newAll.slice(0, 8).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, desc: x.desc, ts: x.ts, poster: x.poster })), newCount: newAll.length,
       history, blocked: cfg.blocked,
+      tg: { enabled: cfg.tg.enabled, channel: cfg.tg.channel, keyHint: cfg.tg.geminiKey ? mask(cfg.tg.geminiKey) : '', count: tgItems.length, review: tgReview.length, lastRun: tgst.lastRun || 0, lastError: tgst.lastError || null, available: tgItems.filter(x => x.status === 'available').length },
       notify: { discord: nf.discord ? mask(nf.discord) : '', discordOk: !!ch.discord, telegram: !!ch.telegram, telegramChat: nf.telegramChat, tokenHint: nf.telegramToken ? mask(nf.telegramToken) : '', onValid: nf.onValid, onNew: nf.onNew },
       activity, autoNext: autoAt && cfg.autoRefreshMin ? autoAt + cfg.autoRefreshMin * 60000 : null,
       run: { busy: !!(await kv.get(KEY.lock)), last: run.last || 0, ms: run.ms || 0, stats: run.stats || {}, postponed: run.postponed || 0, budgetS: CYCLE_BUDGET_MS / 1000, notifyError: run.notifyError || null },
@@ -829,8 +1013,78 @@ const core = {
       const fr = (await kv.get(KEY.new(l))) || [], fk = fr.filter(x => !(x.id === id && x.type === type));
       if (fk.length !== fr.length) { n++; await kv.set(KEY.new(l), fk); }
     }
+    const tl = (await kv.get(KEY.tgitems)) || [], tk = tl.filter(x => !(x.id === id && x.type === type));
+    if (tk.length !== tl.length) { n++; await kv.set(KEY.tgitems, tk); }
     if (!n) throw new Error('Titre introuvable');
   },
+  async tgState() {
+    const cfg = await getConfig(true), st = (await kv.get(KEY.tg)) || {}, t = cfg.tg;
+    return {
+      config: { enabled: t.enabled, channel: t.channel, keyHint: t.geminiKey ? mask(t.geminiKey) : '', model: t.model, keepDays: t.keepDays, badge: t.badge },
+      entries: unblocked(cfg, (await kv.get(KEY.tgitems)) || []).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, year: x.year, poster: x.poster, desc: x.desc, date: x.date, ts: x.ts, status: x.status })),
+      review: (await kv.get(KEY.tgreview)) || [], log: (await kv.get(KEY.tglog)) || [],
+      st: { lastId: st.lastId || 0, lastSeen: st.lastSeen || 0, lastRun: st.lastRun || 0, lastError: st.lastError || null },
+    };
+  },
+  async setTg(o) {
+    const c = await getConfig(true), t = c.tg;
+    if ('channel' in o) {
+      const ch = String(o.channel || '').trim().replace(/^https?:\/\/t\.me\/(s\/)?/i, '').replace(/^@/, '').split(/[\/?#]/)[0];
+      if (!tgm.CHANNEL_RE.test(ch)) throw new Error('Nom de canal invalide (ex : APPROTV ou https://t.me/APPROTV)');
+      if (ch !== t.channel) { t.channel = ch; await kv.set(KEY.tg, { lastId: 0, tries: {} }); }
+    }
+    if (o.clearKey) { t.geminiKey = ''; t.enabled = false; }
+    if (o.geminiKey && String(o.geminiKey).trim()) {
+      const k = String(o.geminiKey).trim();
+      if (!/^[\w\-]{20,}$/.test(k)) throw new Error('Clé Gemini invalide (elle commence en général par « AIza »)');
+      t.geminiKey = k;
+    }
+    if ('model' in o) { const m = String(o.model || '').trim(); if (!/^[\w.\-]{3,60}$/.test(m)) throw new Error('Nom de modèle invalide'); t.model = m; }
+    if ('keepDays' in o) { const n = +o.keepDays; if (![3, 7, 14].includes(n)) throw new Error('Durée invalide'); t.keepDays = n; }
+    if ('badge' in o) t.badge = !!o.badge;
+    if ('enabled' in o) { if (o.enabled && !t.geminiKey) throw new Error('Ajoutez d\'abord la clé Gemini'); t.enabled = !!o.enabled; }
+    await saveConfig(c);
+  },
+  async tgTest() { // lit l'aperçu public du canal (sans Gemini)
+    const cfg = await getConfig(true);
+    try {
+      const posts = await tgm.fetchChannel(cfg.tg.channel), withImg = posts.filter(p => p.images.length), last = withImg[withImg.length - 1];
+      return { ok: true, message: `Aperçu lisible : ${posts.length} publication(s), dont ${withImg.length} avec image.`, latest: last ? { id: last.id, date: last.date, image: last.images[0] } : null };
+    } catch (e) { return { ok: false, message: e.message }; }
+  },
+  async tgAnalyze() { // essai à blanc sur la dernière image : rien n'est enregistré
+    const cfg = await getConfig(true);
+    if (!cfg.tg.geminiKey) throw new Error('Ajoutez d\'abord la clé Gemini');
+    if (!cfg.tmdbKey) throw new Error('Clé TMDB manquante');
+    const posts = await tgm.fetchChannel(cfg.tg.channel), last = posts.filter(p => p.images.length).pop();
+    if (!last) throw new Error('Aucune publication avec image dans l\'aperçu');
+    const img = await tgm.downloadImage(last.images[0]);
+    const read = await tgm.readImage(cfg.tg.geminiKey, cfg.tg.model, img, tgm.parisDate(Date.now()));
+    const env = { m: cfg.tmdbKey, trackers: [], rules: rulesOf(cfg) }, rows = [];
+    for (const it of read.items.slice(0, 12)) {
+      const cands = await tgCandidates(env, it), dec = tgDecide(cands);
+      rows.push({ read: it, auto: !!dec.cand, reason: dec.reason || null, chosen: dec.cand ? dec.cand.name + ' (' + (dec.cand.year || '?') + ')' : null,
+        candidates: cands.slice(0, 3).map(c => ({ kind: c.kind, name: c.name, year: c.year, score: Math.round(c.score * 100) / 100 })) });
+    }
+    return { post: { id: last.id, date: last.date, image: last.images[0] }, general: read.general, rows };
+  },
+  async tgReview(o) { // valide, corrige ou ignore un titre de la file « À vérifier »
+    const cfg = await getConfig(true), review = (await kv.get(KEY.tgreview)) || [], r = review.find(x => x.id === o.id);
+    if (!r) throw new Error('Élément introuvable');
+    if (o.action !== 'ignore') {
+      let cand;
+      if (o.action === 'accept') cand = r.candidates[+o.index];
+      else if (o.action === 'manual') cand = { kind: o.kind === 'movie' ? 'movie' : 'tv', id: parseInt(o.tmdbId, 10) };
+      if (!cand || !(cand.id > 0)) throw new Error('Choix invalide');
+      const built = await tgBuild({ m: cfg.tmdbKey, trackers: [], rules: rulesOf(cfg) }, cand, r.read, Date.parse(r.date + 'T00:00:00Z'), { id: r.post, date: r.ts }, true);
+      if (!built.entry) throw new Error(built.reason);
+      const items = (await kv.get(KEY.tgitems)) || [];
+      addTg(items, built.entry); await kv.set(KEY.tgitems, items);
+    }
+    await kv.set(KEY.tgreview, review.filter(x => x.id !== o.id));
+  },
+  async tgReprocess() { const st = (await kv.get(KEY.tg)) || {}; await kv.set(KEY.tg, { ...st, lastId: 0, tries: {} }); }, // relire les images des 3 derniers jours
+  async tgClear() { await kv.set(KEY.tgitems, []); await kv.set(KEY.tgreview, []); await kv.del(KEY.tglog); },
   async explain(q) { // cherche une release sur les trackers et explique la décision pour chaque version
     q = String(q || '').trim();
     if (q.length < 2) throw new Error('Saisissez au moins 2 caractères');
@@ -880,7 +1134,7 @@ const core = {
   async reset(what) {
     if (!['seen', 'items', 'all'].includes(what)) throw new Error('Action inconnue');
     for (const l of LANGS) {
-      if (what !== 'seen') { await kv.set(KEY.items(l), []); await kv.set(KEY.new(l), []); } // vider les catalogues
+      if (what !== 'seen') { await kv.set(KEY.items(l), []); await kv.set(KEY.new(l), []); await kv.set(KEY.tgitems, []); } // vider les catalogues
       await kv.set(KEY.seen(l), {});                        // et/ou retraiter aussi les torrents rejetés
     }
     await kv.del(KEY.newseen);
@@ -944,7 +1198,7 @@ async function handler(req, res) {
 
 module.exports = handler;
 module.exports.handler = handler;
-module.exports._t = { parseRelease, langOk, parseTorznab, parseDvds, evalMovie, evalSeries, addEntry, core, cycle, KEY, kv, getConfig };
+module.exports._t = { tgm, tgCandidates, tgDecide, telegramCycle, parseRelease, langOk, parseTorznab, parseDvds, evalMovie, evalSeries, addEntry, core, cycle, KEY, kv, getConfig };
 
 /* ------------------------------------------------------------------ exécution locale (node index.js) */
 if (require.main === module) {
