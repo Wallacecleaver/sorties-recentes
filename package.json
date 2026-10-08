@@ -11,7 +11,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "stremio-addon-sdk": "^1.6.10",
     "@vercel/functions": "^3.0.0"
   },
   "directories": {
