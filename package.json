@@ -1,8 +1,8 @@
 {
   "name": "sorties-recentes",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
-  "description": "Addon Stremio : catalogues des sorties récentes (Torznab + TMDB), dashboard admin, hébergeable sur Vercel",
+  "description": "Addon Stremio : sorties annoncées sur un canal Telegram (lues par IA), identifiées sur TMDB, avec disponibilité en torrent",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"

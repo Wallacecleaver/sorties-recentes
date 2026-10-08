@@ -3,101 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sorties récentes — Installation</title>
+<title>Sorties annoncées — Installation</title>
 <meta name="theme-color" content="#f97316">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AC%3C/text%3E%3C/svg%3E">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{--bg-primary:#09090b;--bg-secondary:#0f0f12;--bg-tertiary:#18181b;--bg-hover:#27272a;
-  --border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);
-  --text-primary:#fafafa;--text-secondary:#a1a1aa;--text-muted:#71717a;
-  --accent:#f97316;--accent-hover:#ea580c;--accent-subtle:rgba(249,115,22,.1);--success:#10b981;
-  --radius-md:10px;--radius-lg:14px;--radius-xl:18px;--font-mono:'JetBrains Mono','Fira Code',Consolas,monospace}
+:root{--bg:#09090b;--bg2:#0f0f12;--bg3:#18181b;--hover:#27272a;--line:rgba(255,255,255,.1);--txt:#fafafa;--mut:#71717a;--sec:#a1a1aa;--acc:#f97316;--acc2:#ea580c;--accs:rgba(249,115,22,.1)}
 html{font-size:15px;-webkit-font-smoothing:antialiased}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6;
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;line-height:1.6;
   background-image:radial-gradient(800px 400px at 50% -10%,rgba(249,115,22,.12),transparent 70%);background-repeat:no-repeat}
-.wrap{max-width:520px;margin:0 auto;padding:48px 20px 60px}
+.wrap{max-width:500px;margin:0 auto;padding:56px 20px 60px}
 .logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px}
-.logo-icon{width:40px;height:40px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
+.logo-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
 .logo-icon svg{width:22px;height:22px;fill:currentColor}
 .logo-text{font-size:22px;font-weight:700}
-.lead{text-align:center;color:var(--text-muted);font-size:14px;margin-bottom:28px}
-.card{background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-xl);padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-.label{font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:10px}
-.seg{display:grid;gap:8px}
-.opt{display:flex;align-items:flex-start;gap:12px;text-align:left;width:100%;padding:14px 16px;background:var(--bg-tertiary);border:1px solid var(--border-default);
-  border-radius:var(--radius-md);color:var(--text-primary);cursor:pointer;font-family:inherit;transition:all 150ms ease}
-.opt:hover{background:var(--bg-hover)}
-.opt .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--text-muted);flex-shrink:0;margin-top:3px;position:relative}
-.opt.active{border-color:var(--accent);background:var(--accent-subtle)}
-.opt.active .dot{border-color:var(--accent)}
-.opt.active .dot::after{content:"";position:absolute;inset:3px;background:var(--accent);border-radius:50%}
-.opt .t{font-weight:600;font-size:14px}.opt .d{font-size:12px;color:var(--text-muted);margin-top:2px}
-.install{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:20px;padding:13px 18px;border-radius:var(--radius-md);
-  background:var(--accent);color:#fff;text-decoration:none;font-size:15px;font-weight:600;transition:background 150ms ease}
-.install:hover{background:var(--accent-hover)}
-.install svg{width:18px;height:18px;fill:currentColor}
-.url-row{display:flex;gap:8px;margin-top:14px;align-items:stretch}
-.url{flex:1;min-width:0;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);background:var(--bg-tertiary);border:1px solid var(--border-subtle);
-  border-radius:var(--radius-md);padding:10px 12px;word-break:break-all}
-.copy{background:var(--bg-tertiary);border:1px solid var(--border-default);color:var(--text-secondary);border-radius:var(--radius-md);padding:0 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500}
-.copy:hover{background:var(--bg-hover);color:var(--text-primary)}
-.foot{text-align:center;color:var(--text-muted);font-size:12px;margin-top:20px;line-height:1.6}
-.pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
-.pill{font-size:12px;font-weight:500;color:var(--accent);background:var(--accent-subtle);padding:3px 12px;border-radius:9999px}
+.lead{text-align:center;color:var(--mut);font-size:14px;margin-bottom:26px}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.steps{display:grid;gap:10px;margin-bottom:6px}
+.step{display:flex;gap:12px;align-items:flex-start;color:var(--sec);font-size:14px}
+.step b{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--accs);color:var(--acc);display:flex;align-items:center;justify-content:center;font-size:12px}
+.install{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:22px;padding:13px 18px;border-radius:10px;background:var(--acc);color:#fff;text-decoration:none;font-size:15px;font-weight:600;transition:background 150ms}
+.install:hover{background:var(--acc2)}.install svg{width:18px;height:18px;fill:currentColor}
+.url-row{display:flex;gap:8px;margin-top:14px}
+.url{flex:1;min-width:0;font-family:'JetBrains Mono','Fira Code',Consolas,monospace;font-size:12px;color:var(--sec);background:var(--bg3);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;word-break:break-all}
+.copy{background:var(--bg3);border:1px solid var(--line);color:var(--sec);border-radius:10px;padding:0 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500}
+.copy:hover{background:var(--hover);color:var(--txt)}
+.foot{text-align:center;color:var(--mut);font-size:12px;margin-top:20px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="logo">
     <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-2z"/></svg></div>
-    <span class="logo-text">Sorties récentes</span>
+    <span class="logo-text">Sorties annoncées</span>
   </div>
-  <p class="lead">Les films, séries et animés qui viennent vraiment de sortir.</p>
-  <div class="pills"><span class="pill">Films récents</span><span class="pill">Séries récentes</span><span class="pill">Animés récents</span></div>
-
+  <p class="lead">Les sorties du jour, et leur disponibilité en torrent.</p>
   <div class="card">
-    <div class="label">Version souhaitée</div>
-    <div class="seg" id="opts"></div>
+    <div class="steps">
+      <div class="step"><b>1</b><span>Un canal Telegram annonce les sorties en image.</span></div>
+      <div class="step"><b>2</b><span>L'IA lit le titre, TMDB l'identifie : la sortie apparaît dans Stremio.</span></div>
+      <div class="step"><b>3</b><span>Dès que le torrent est sorti, la fiche passe en ✅.</span></div>
+    </div>
     <a class="install" id="install" href="#"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Installer dans Stremio</a>
     <div class="url-row"><div class="url" id="url"></div><button class="copy" id="copy">Copier</button></div>
   </div>
-  <p class="foot">Catalogues uniquement : aucun flux n'est fourni par cet addon.<br>Collez le lien ci-dessus dans Stremio (Addons &rarr; Installer depuis une URL) si le bouton ne s'ouvre pas.</p>
+  <p class="foot">Quatre catalogues : Annonces et Disponibles, en films et en séries. Aucun flux n'est fourni.<br>Si le bouton ne s'ouvre pas : Stremio &rarr; Addons &rarr; coller le lien ci-dessus.</p>
 </div>
 <script>
-/*LANGS*/
-var HINTS = {
-  all: 'Toutes les releases, quelle que soit la langue (dont VOSTFR).',
-  vf: 'Uniquement les releases FRENCH, TRUEFRENCH, VFF, VFQ, VFI, VF2, VOF ou MULTI.',
-  vff: 'Uniquement les releases VFF, VF2, VFI, TRUEFRENCH ou VOF (MULTI ou FRENCH seuls ne suffisent pas).'
-};
-var cur = window.__LANG || 'all';
-var box = document.getElementById('opts');
-function draw() {
-  box.textContent = '';
-  Object.keys(window.__LANGS).forEach(function (k) {
-    var b = document.createElement('button');
-    b.className = 'opt' + (k === cur ? ' active' : '');
-    var dot = document.createElement('span'); dot.className = 'dot';
-    var w = document.createElement('span');
-    var t = document.createElement('div'); t.className = 't'; t.textContent = window.__LANGS[k];
-    var d = document.createElement('div'); d.className = 'd'; d.textContent = HINTS[k] || '';
-    w.appendChild(t); w.appendChild(d); b.appendChild(dot); b.appendChild(w);
-    b.onclick = function () { cur = k; draw(); update(); };
-    box.appendChild(b);
-  });
-}
-function update() {
-  var p = '/' + cur + '/manifest.json';
-  document.getElementById('install').href = 'stremio://' + location.host + p;
-  document.getElementById('url').textContent = location.origin + p;
-}
+var p = '/manifest.json';
+document.getElementById('install').href = 'stremio://' + location.host + p;
+document.getElementById('url').textContent = location.origin + p;
 document.getElementById('copy').onclick = function () {
   var u = document.getElementById('url').textContent, b = this;
   (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { b.textContent = 'Copié ✓'; setTimeout(function () { b.textContent = 'Copier'; }, 1800); }, function () { window.prompt('Copiez ce lien :', u); });
 };
-draw(); update();
 </script>
 </body>
 </html>

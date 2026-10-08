@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sorties récentes — Admin</title>
+<title>Sorties annoncées — Admin</title>
 <meta name="theme-color" content="#f97316">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AC%3C/text%3E%3C/svg%3E">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg-primary:#09090b;--bg-secondary:#0f0f12;--bg-tertiary:#18181b;--bg-elevated:#1f1f23;--bg-hover:#27272a;
+  --bg-primary:#09090b;--bg-secondary:#0f0f12;--bg-tertiary:#18181b;--bg-hover:#27272a;
   --border-subtle:rgba(255,255,255,.06);--border-default:rgba(255,255,255,.1);--border-strong:rgba(255,255,255,.15);
   --text-primary:#fafafa;--text-secondary:#a1a1aa;--text-muted:#71717a;
   --accent-primary:#f97316;--accent-primary-hover:#ea580c;--accent-primary-subtle:rgba(249,115,22,.1);
@@ -31,17 +31,17 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 svg{fill:currentColor}
 [hidden]{display:none!important}
 
-/* ---------- Login ---------- */
+/* ---------- Connexion ---------- */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(800px 400px at 50% -10%,rgba(249,115,22,.12),transparent 70%)}
 .login-card{width:100%;max-width:380px;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-xl);padding:32px;box-shadow:var(--shadow-lg)}
 .login-card .logo{justify-content:center;margin-bottom:8px}
 .login-sub{text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:24px}
 .login-err{color:var(--accent-danger);font-size:13px;min-height:20px;margin-top:10px;text-align:center}
 
-/* ---------- Header ---------- */
+/* ---------- En-tête ---------- */
 .app{display:flex;flex-direction:column;min-height:100vh}
 .app-header{position:sticky;top:0;z-index:100;background:rgba(9,9,11,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-subtle)}
-.header-top{padding:16px 24px;display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto;width:100%;gap:12px}
+.header-top{padding:16px 24px;display:flex;align-items:center;justify-content:space-between;max-width:1300px;margin:0 auto;width:100%;gap:12px}
 .logo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .logo-icon{width:36px;height:36px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;flex-shrink:0}
 .logo-icon svg{width:20px;height:20px}
@@ -59,17 +59,18 @@ svg{fill:currentColor}
 .header-btn.accent{background:var(--accent-primary-subtle);border-color:rgba(249,115,22,.3);color:var(--accent-primary)}
 .header-btn.accent:hover{background:rgba(249,115,22,.2)}
 .header-btn.danger:hover{background:var(--accent-danger-subtle);border-color:var(--accent-danger);color:var(--accent-danger)}
-.nav-tabs{display:flex;gap:4px;padding:0 24px;max-width:1400px;margin:0 auto;width:100%;overflow-x:auto}
+.nav-tabs{display:flex;gap:4px;padding:0 24px;max-width:1300px;margin:0 auto;width:100%;overflow-x:auto}
 .nav-tab{display:flex;align-items:center;gap:8px;padding:12px 20px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-size:14px;font-weight:500;cursor:pointer;transition:all var(--transition-fast);margin-bottom:-1px;font-family:inherit;white-space:nowrap}
 .nav-tab:hover{color:var(--text-secondary)}
 .nav-tab.active{color:var(--accent-primary);border-bottom-color:var(--accent-primary)}
 .nav-tab svg{width:18px;height:18px}
+.nav-tab .dot{min-width:18px;height:18px;border-radius:9px;background:var(--accent-warning);color:#000;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
 .app-main{flex:1;padding:32px 24px 80px}
-.main-content{max-width:1400px;margin:0 auto}
+.main-content{max-width:1300px;margin:0 auto}
 .page{display:none}.page.active{display:block}
 
-/* ---------- Stats ---------- */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+/* ---------- Cartes de statistiques ---------- */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px}
 .stat-card{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:20px;transition:all var(--transition-fast)}
 .stat-card:hover{border-color:var(--border-default)}
 .stat-card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
@@ -94,29 +95,19 @@ svg{fill:currentColor}
 .section-body{padding:24px}.section-body.no-padding{padding:0}
 .hint{font-size:13px;color:var(--text-muted);margin-top:10px;line-height:1.5}
 .empty{padding:40px 24px;text-align:center;color:var(--text-muted);font-size:14px}
-.cols{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start}
-@media(max-width:1000px){.cols{grid-template-columns:1fr}}
 
-/* ---------- Dernières sorties ---------- */
+/* ---------- Affiches ---------- */
 .latest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;padding:20px 24px}
-.poster-card{background:var(--bg-tertiary);border:1px solid var(--border-subtle);border-radius:var(--radius-md);overflow:hidden;transition:all var(--transition-fast)}
+.poster-card{position:relative;background:var(--bg-tertiary);border:1px solid var(--border-subtle);border-radius:var(--radius-md);overflow:hidden;transition:all var(--transition-fast)}
 .poster-card:hover{border-color:var(--accent-primary);transform:translateY(-2px)}
-.poster-card img,.poster-card .noimg{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--bg-elevated)}
+.poster-card img,.poster-card .noimg{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--bg-hover)}
 .poster-card .noimg{display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+.poster-card .tick{position:absolute;top:8px;right:8px;background:var(--accent-success);color:#fff;border-radius:9999px;font-size:11px;font-weight:700;padding:2px 8px}
 .poster-card .pc-body{padding:10px 12px}
 .poster-card .pc-name{font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .poster-card .pc-desc{font-size:11px;color:var(--text-muted);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-/* ---------- Activité ---------- */
-.bars{display:flex;align-items:flex-end;gap:6px;height:130px;padding-top:8px}
-.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0}
-.bar .col{width:100%;background:var(--accent-primary);border-radius:4px 4px 0 0;min-height:3px;opacity:.85;transition:opacity var(--transition-fast)}
-.bar:hover .col{opacity:1}
-.bar .col.zero{background:var(--bg-hover);opacity:1}
-.bar .n{font-size:10px;color:var(--text-secondary);height:14px}
-.bar .l{font-size:9px;color:var(--text-muted);white-space:nowrap}
-
-/* ---------- Tables ---------- */
+/* ---------- Tableaux ---------- */
 .table-container{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th,td{padding:12px 16px;text-align:left;font-size:13px;vertical-align:middle}
@@ -136,7 +127,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .mono{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);word-break:break-all}
 .thumb{width:34px;height:50px;object-fit:cover;border-radius:5px;background:var(--bg-tertiary);display:block}
 
-/* ---------- Buttons ---------- */
+/* ---------- Boutons ---------- */
 .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;font-size:13px;font-weight:600;border:1px solid transparent;border-radius:var(--radius-md);cursor:pointer;transition:all var(--transition-fast);font-family:inherit;white-space:nowrap;text-decoration:none}
 .btn svg{width:16px;height:16px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -145,18 +136,15 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .btn-ghost{background:var(--bg-tertiary);border-color:var(--border-default);color:var(--text-secondary)}.btn-ghost:hover:not(:disabled){background:var(--bg-hover);color:var(--text-primary)}
 .btn-danger{background:rgba(239,68,68,.15);color:#ef4444}.btn-danger:hover:not(:disabled){background:rgba(239,68,68,.25)}
 .btn-small{padding:6px 12px;font-size:12px}
-.btn-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;background:transparent;border:1px solid var(--border-default);border-radius:var(--radius-sm);color:var(--text-muted);cursor:pointer;transition:all var(--transition-fast)}
+.btn-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;background:transparent;border:1px solid var(--border-default);border-radius:var(--radius-sm);color:var(--text-muted);cursor:pointer;transition:all var(--transition-fast);text-decoration:none}
 .btn-icon svg{width:16px;height:16px}
-a.btn-icon{text-decoration:none}
-textarea.form-input{min-height:84px;resize:vertical;font-family:var(--font-mono);font-size:13px}
-.blk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}.blk:last-child{border-bottom:none}.blk .nm{flex:1;min-width:0}
 .btn-icon:hover{background:var(--bg-hover);border-color:var(--accent-primary);color:var(--accent-primary)}
 .btn-icon.danger:hover{border-color:var(--accent-danger);color:var(--accent-danger)}
 .btn-icon:disabled{opacity:.5;cursor:wait}
-.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.row-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
-/* ---------- Forms ---------- */
+/* ---------- Formulaires ---------- */
 .form-group{margin-bottom:16px}
 .form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:8px}
 .form-input{width:100%;padding:10px 12px;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:14px;font-family:inherit}
@@ -172,14 +160,16 @@ select.form-input{width:auto;min-width:200px;cursor:pointer}
 .switch input:checked+span::before{transform:translateX(18px)}
 .setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .opt-block{padding:18px 0;border-bottom:1px solid var(--border-subtle)}.opt-block:first-child{padding-top:0}.opt-block:last-child{border-bottom:none;padding-bottom:0}
-.opt-block .t{font-weight:500;margin-bottom:2px}.opt-block .d{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5}
+.opt-block .t,.opt-grid .t{font-weight:500;margin-bottom:2px}
+.opt-block .d,.opt-grid .d{font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.5}
 .opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
-.opt-grid .t{font-weight:500;margin-bottom:2px}.opt-grid .d{font-size:12px;color:var(--text-muted);margin-bottom:8px;line-height:1.4}
+.opt-grid .d{font-size:12px;margin-bottom:8px}
 code{font-family:var(--font-mono);font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border-subtle);padding:3px 8px;border-radius:var(--radius-sm);word-break:break-all;color:var(--text-secondary)}
 .copy-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 details{margin-top:16px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:12px 16px;background:var(--bg-tertiary)}
 details summary{cursor:pointer;color:var(--text-secondary);font-size:13px;font-weight:500}
 details[open] summary{margin-bottom:12px}
+textarea.form-input{min-height:84px;resize:vertical}
 .seg{display:inline-flex;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:3px;gap:2px;flex-wrap:wrap}
 .seg button{background:transparent;border:none;color:var(--text-muted);padding:6px 12px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit}
 .seg button:hover{color:var(--text-secondary)}
@@ -192,23 +182,15 @@ details[open] summary{margin-bottom:12px}
 .check .dotc svg{width:14px;height:14px}
 .check.done .dotc{background:var(--accent-success);border-color:var(--accent-success);color:#fff}
 .check .t{font-weight:500}.check .d{font-size:12px;color:var(--text-muted)}.check .go{margin-left:auto}
-.install-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--border-subtle)}
-.install-row:last-child{border-bottom:none;padding-bottom:0}.install-row:first-child{padding-top:0}
-.install-row .t{font-weight:600;margin-bottom:4px}
+.install-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.blk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}.blk:last-child{border-bottom:none}.blk .nm{flex:1;min-width:0}
 
-/* ---------- Diagnostic ---------- */
+/* ---------- À vérifier / diagnostic ---------- */
 .diag-card{border:1px solid var(--border-subtle);background:var(--bg-tertiary);border-radius:var(--radius-lg);padding:18px;margin-bottom:16px}
 .diag-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.diag-head .mono{flex:1;min-width:220px}
 .diag-info{font-size:13px;color:var(--text-secondary);margin-bottom:10px}
-.dates{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:14px}
-.dates div{background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:6px 10px;font-size:12px}
-.dates b{display:block;color:var(--text-muted);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
-.verdict{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--border-subtle);font-size:13px}
-.verdict .badge{flex-shrink:0;min-width:78px;text-align:center}
-.verdict .lg{width:70px;flex-shrink:0;color:var(--text-muted);font-size:12px;padding-top:2px}
 
-/* ---------- Toasts & modales ---------- */
+/* ---------- Notifications et fenêtres ---------- */
 .toast-container{position:fixed;top:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:10px;max-width:400px;width:calc(100% - 40px)}
 .toast{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);animation:tin .3s ease}
 .toast.hiding{animation:tout .3s ease forwards}
@@ -244,7 +226,7 @@ details[open] summary{margin-bottom:12px}
 <!-- Connexion -->
 <div class="login-wrap" id="login" hidden>
   <div class="login-card">
-    <div class="logo"><div class="logo-icon" data-icon="film"></div><span class="logo-text">Sorties récentes</span></div>
+    <div class="logo"><div class="logo-icon" data-icon="film"></div><span class="logo-text">Sorties annoncées</span></div>
     <div class="login-sub">Connexion à l'administration</div>
     <div class="form-group"><label for="pw">Mot de passe</label>
       <input id="pw" class="form-input" type="password" autocomplete="current-password" placeholder="ADMIN_PASSWORD"></div>
@@ -259,7 +241,7 @@ details[open] summary{margin-bottom:12px}
     <div class="header-top">
       <div class="logo">
         <div class="logo-icon" data-icon="film"></div>
-        <span class="logo-text">Sorties récentes</span>
+        <span class="logo-text">Sorties annoncées</span>
         <span class="logo-badge">Admin</span>
         <span class="pill idle" id="cyclePill"><span data-icon="clock"></span><span id="cycleText">--</span></span>
       </div>
@@ -270,117 +252,76 @@ details[open] summary{margin-bottom:12px}
     </div>
     <nav class="nav-tabs" id="tabs">
       <button class="nav-tab active" data-page="dashboard"><span data-icon="dashboard"></span>Tableau de bord</button>
-      <button class="nav-tab" data-page="trackers"><span data-icon="server"></span>Trackers</button>
-      <button class="nav-tab" data-page="catalog"><span data-icon="film"></span>Catalogues</button>
+      <button class="nav-tab" data-page="annonces"><span data-icon="film"></span>Annonces<span class="dot" id="reviewDot" hidden></span></button>
       <button class="nav-tab" data-page="telegram"><span data-icon="send"></span>Telegram</button>
-      <button class="nav-tab" data-page="log"><span data-icon="list"></span>Journal</button>
-      <button class="nav-tab" data-page="diag"><span data-icon="search"></span>Diagnostic</button>
+      <button class="nav-tab" data-page="trackers"><span data-icon="server"></span>Trackers</button>
       <button class="nav-tab" data-page="settings"><span data-icon="settings"></span>Réglages</button>
     </nav>
   </header>
 
   <main class="app-main"><div class="main-content">
 
-    <!-- Tableau de bord -->
+    <!-- ===== Tableau de bord ===== -->
     <div class="page active" id="page-dashboard">
       <div class="section" id="setup" hidden>
         <div class="section-header"><div class="section-title"><span data-icon="check"></span>Démarrage</div><span class="section-count" id="setupCount"></span></div>
         <div class="section-body" id="setupBody"></div>
       </div>
       <div class="stats-grid" id="stats"></div>
-
       <div class="section">
         <div class="section-header">
-          <div class="section-title"><span data-icon="star"></span>Dernières sorties validées</div>
+          <div class="section-title"><span data-icon="star"></span>Dernières annonces</div>
           <div class="section-buttons"><button class="btn btn-solid" id="runBtn"><span data-icon="refresh"></span>Lancer un cycle</button></div>
         </div>
         <div id="latest"></div>
       </div>
-
-      <div class="section" id="freshSec">
-        <div class="section-header">
-          <div class="section-title"><span data-icon="clock"></span>Nouveaux torrents<span class="section-count" id="freshCount"></span></div>
-          <div class="section-buttons"><button class="btn btn-ghost btn-small" id="freshGo">Voir tout</button></div>
-        </div>
-        <div id="fresh"></div>
-      </div>
-
-      <div class="cols">
-        <div class="section">
-          <div class="section-header"><div class="section-title"><span data-icon="layers"></span>Versions du catalogue</div></div>
-          <div class="section-body no-padding"><div class="table-container"><table>
-            <thead><tr><th>Version</th><th>Films</th><th>Séries</th><th>Animés</th><th>Nouveaux</th><th>Validés</th><th>Rejetés</th><th>Erreurs</th></tr></thead>
-            <tbody id="langRows"></tbody>
-          </table></div></div>
-        </div>
-        <div class="section">
-          <div class="section-header"><div class="section-title"><span data-icon="tune"></span>Activité</div><span class="section-count">14 derniers jours</span></div>
-          <div class="section-body"><div class="bars" id="bars"></div><div class="hint">Titres validés par jour (version « Toutes »).</div></div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Historique des cycles</div><span class="section-count">20 derniers</span></div>
-        <div class="section-body no-padding"><div class="table-container" id="history"></div></div>
-      </div>
-
       <div class="section" id="alerts" hidden>
         <div class="section-header"><div class="section-title"><span data-icon="warning"></span>À vérifier</div></div>
         <div class="section-body" id="alertsBody"></div>
       </div>
-    </div>
-
-    <!-- Trackers -->
-    <div class="page" id="page-trackers">
       <div class="section">
-        <div class="section-header">
-          <div class="section-title"><span data-icon="server"></span>Trackers (API Torznab)<span class="section-count" id="trCount"></span></div>
-          <div class="section-buttons"><button class="btn btn-solid" id="addTr"><span data-icon="add"></span>Ajouter un tracker</button></div>
-        </div>
-        <div class="section-body no-padding" id="trBody"></div>
+        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Historique des cycles</div><span class="section-count">10 derniers</span></div>
+        <div class="section-body no-padding"><div class="table-container" id="history"></div></div>
       </div>
-      <p class="hint">Les torrents de tous les trackers actifs sont fusionnés dans les mêmes catalogues. Les clés ne sont jamais renvoyées au navigateur (seuls les 4 derniers caractères sont affichés).</p>
     </div>
 
-    <!-- Catalogues -->
-    <div class="page" id="page-catalog">
+    <!-- ===== Annonces ===== -->
+    <div class="page" id="page-annonces">
+      <div class="section" id="reviewSec" hidden>
+        <div class="section-header"><div class="section-title"><span data-icon="warning"></span>À vérifier<span class="section-count" id="reviewCount"></span></div></div>
+        <div class="section-body" id="reviewBody"></div>
+      </div>
       <div class="section">
         <div class="section-header">
-          <div class="section-title"><span data-icon="film"></span>Contenu des catalogues<span class="section-count" id="catCount"></span></div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><div class="seg" id="catSrc"><button data-s="valid">Sorties validées</button><button data-s="new">Nouveaux torrents</button></div><div class="seg" id="catLang"></div></div>
+          <div class="section-title"><span data-icon="film"></span>Annonces<span class="section-count" id="annCount"></span></div>
+          <div class="section-buttons"><button class="btn btn-ghost btn-small" id="annClear"><span data-icon="trash"></span>Tout effacer</button></div>
         </div>
         <div class="filters">
-          <div class="seg" id="catType">
-            <button data-t="all" class="active">Tout</button><button data-t="movie">Films</button><button data-t="series">Séries</button><button data-t="anime">Animés</button>
-          </div>
-          <input class="form-input" id="catSearch" type="search" placeholder="Rechercher un titre…">
+          <div class="seg" id="annState"><button data-s="all" class="active">Tout</button><button data-s="announced">Annoncés</button><button data-s="available">Disponibles</button></div>
+          <div class="seg" id="annType"><button data-t="all" class="active">Films et séries</button><button data-t="movie">Films</button><button data-t="series">Séries</button></div>
+          <input class="form-input" id="annSearch" type="search" placeholder="Rechercher un titre…">
         </div>
-        <div class="section-body no-padding"><div class="table-container" id="catBody"></div></div>
+        <div class="section-body no-padding"><div class="table-container" id="annBody"></div></div>
       </div>
     </div>
 
-    <!-- Telegram -->
+    <!-- ===== Telegram ===== -->
     <div class="page" id="page-telegram">
       <div class="section">
         <div class="section-header"><div class="section-title"><span data-icon="send"></span>Source Telegram</div><span id="tgBadge"></span></div>
         <div class="section-body">
-          <p class="hint" style="margin-top:0;margin-bottom:16px">L'addon lit les images d'annonce publiées sur un canal Telegram public, les fait lire par l'IA gratuite de Google (Gemini), retrouve chaque titre sur TMDB et l'ajoute aux catalogues « Sorties annoncées ». Rien n'est republié : seuls les titres sont extraits.</p>
+          <p class="hint" style="margin-top:0;margin-bottom:16px">L'addon lit les images d'annonce d'un canal Telegram public, les fait lire par l'IA gratuite de Google (Gemini), retrouve chaque titre sur TMDB et l'ajoute aux catalogues. Rien n'est republié : seuls les titres sont extraits.</p>
           <div class="opt-grid">
             <div><div class="t">Canal Telegram</div><div class="d">Nom ou lien du canal public.</div><input class="form-input" id="tgChannel" placeholder="APPROTV ou https://t.me/APPROTV"></div>
             <div><div class="t">Clé Gemini (gratuite)</div><div class="d">Voir « Obtenir la clé » plus bas.</div><input class="form-input" id="tgKey" type="password" autocomplete="off" placeholder="AIza…"></div>
-            <div><div class="t">Durée dans le catalogue</div><div class="d">Une annonce reste visible ce temps-là.</div><select class="form-input" id="tgKeep"><option value="3">3 jours</option><option value="7">7 jours</option><option value="14">14 jours</option></select></div>
           </div>
           <div class="opt-block" style="margin-top:18px">
-            <div class="setting-row"><div><div class="t">Vérifier la disponibilité sur vos trackers</div><div class="d" style="margin-bottom:0">Une annonce passe de « annoncé » à « torrent disponible (1080p, VFQ) » dès qu'un torrent correspondant apparaît sur un de vos trackers (5 vérifications par cycle).</div></div><label class="switch"><input type="checkbox" id="tgBadgeSw"><span></span></label></div>
-          </div>
-          <div class="opt-block">
-            <div class="setting-row"><div><div class="t">Activer la source Telegram</div><div class="d" style="margin-bottom:0">Ajoute deux catalogues dans Stremio : « Sorties annoncées · Films » et « · Séries ». <b>Après activation, désinstallez puis réinstallez l'addon.</b></div></div><label class="switch"><input type="checkbox" id="tgEnable"><span></span></label></div>
+            <div class="setting-row"><div><div class="t">Activer la lecture du canal</div><div class="d" style="margin-bottom:0">Quand c'est activé, chaque cycle lit les nouvelles images du canal.</div></div><label class="switch"><input type="checkbox" id="tgEnable"><span></span></label></div>
           </div>
           <div class="section-buttons" style="margin-top:18px">
             <button class="btn btn-solid" id="tgSave">Enregistrer</button>
             <button class="btn btn-ghost" id="tgTest"><span data-icon="search"></span>Tester la lecture du canal</button>
             <button class="btn btn-ghost" id="tgAnalyze"><span data-icon="star"></span>Analyser la dernière image</button>
-            <button class="btn btn-ghost" id="tgRun"><span data-icon="refresh"></span>Lancer un cycle</button>
             <button class="btn btn-ghost" id="tgReprocess"><span data-icon="replay"></span>Relire les 3 derniers jours</button>
           </div>
           <details>
@@ -388,7 +329,7 @@ details[open] summary{margin-bottom:12px}
             <ol style="padding-left:20px;line-height:1.9;color:var(--text-secondary)">
               <li>Ouvrez <b>aistudio.google.com/apikey</b> et connectez-vous avec un compte Google.</li>
               <li>Cliquez sur « Create API key » (créer une clé API).</li>
-              <li>Copiez la clé (elle commence par <code>AIza</code>), collez-la dans le champ ci-dessus, puis « Enregistrer ».</li>
+              <li>Copiez la clé (elle commence par <code>AIza</code>), collez-la ci-dessus, puis « Enregistrer ».</li>
               <li>Cliquez sur « Analyser la dernière image » : vous voyez ce que l'IA lit, sans rien enregistrer.</li>
             </ol>
             <p class="hint">L'offre gratuite de Google a des limites par minute et par jour ; quelques images par jour passent largement. Si la limite est atteinte, l'addon réessaie au cycle suivant.</p>
@@ -401,80 +342,36 @@ details[open] summary{margin-bottom:12px}
           <div id="tgOut" style="margin-top:16px"></div>
         </div>
       </div>
-
-      <div class="section" id="tgReviewSec">
-        <div class="section-header"><div class="section-title"><span data-icon="warning"></span>À vérifier<span class="section-count" id="tgReviewCount"></span></div></div>
-        <div class="section-body" id="tgReview"></div>
-      </div>
-
-      <div class="section">
-        <div class="section-header">
-          <div class="section-title"><span data-icon="film"></span>Sorties annoncées<span class="section-count" id="tgCount"></span></div>
-          <div class="section-buttons"><button class="btn btn-ghost btn-small" id="tgClear"><span data-icon="trash"></span>Tout effacer</button></div>
-        </div>
-        <div class="section-body no-padding"><div class="table-container" id="tgEntries"></div></div>
-      </div>
-
       <div class="section">
         <div class="section-header"><div class="section-title"><span data-icon="list"></span>Journal Telegram</div><button class="btn btn-ghost btn-small" id="tgReload"><span data-icon="refresh"></span>Actualiser</button></div>
         <div class="section-body no-padding"><div class="table-container" id="tgLog"></div></div>
       </div>
     </div>
 
-    <!-- Journal -->
-    <div class="page" id="page-log">
+    <!-- ===== Trackers ===== -->
+    <div class="page" id="page-trackers">
       <div class="section">
         <div class="section-header">
-          <div class="section-title"><span data-icon="list"></span>Journal des derniers cycles<span class="section-count" id="logCount"></span></div>
-          <div class="section-buttons">
-            <button class="btn btn-ghost btn-small" id="logReload"><span data-icon="refresh"></span>Actualiser</button>
-            <button class="btn btn-ghost btn-small" id="logClear"><span data-icon="trash"></span>Effacer</button>
-          </div>
+          <div class="section-title"><span data-icon="server"></span>Trackers (API Torznab)<span class="section-count" id="trCount"></span></div>
+          <div class="section-buttons"><button class="btn btn-solid" id="addTr"><span data-icon="add"></span>Ajouter un tracker</button></div>
         </div>
-        <div class="filters">
-          <div class="seg" id="logKind">
-            <button data-k="all" class="active">Tout</button><button data-k="ok">Acceptés</button><button data-k="ko">Rejetés</button><button data-k="err">Erreurs</button>
-          </div>
-          <input class="form-input" id="logSearch" type="search" placeholder="Rechercher une release ou une raison…">
-        </div>
-        <div class="section-body no-padding"><div class="table-container" id="logBody"></div></div>
+        <div class="section-body no-padding" id="trBody"></div>
       </div>
-      <p class="hint">Les rejets sont notés pour « Toutes les versions » ; les acceptations et les erreurs pour les trois versions. Le bouton loupe ouvre le diagnostic détaillé d'une release.</p>
+      <p class="hint">Les trackers servent à une seule chose : savoir si le torrent d'une sortie annoncée est disponible (la fiche passe alors en ✅). Les clés ne sont jamais renvoyées au navigateur (seuls les 4 derniers caractères sont affichés).</p>
     </div>
 
-    <!-- Diagnostic -->
-    <div class="page" id="page-diag">
-      <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="search"></span>Pourquoi ce titre n'est pas là ?</div></div>
-        <div class="section-body">
-          <p style="margin-bottom:14px;color:var(--text-secondary)">Tapez un titre (ex : <code>Soulm8te</code>) ou une release. L'outil cherche sur vos trackers, lit les dates TMDB et vous dit, pour chaque version, si le torrent est accepté ou pourquoi il est rejeté.</p>
-          <div class="input-row">
-            <input class="form-input" id="diagQ" type="search" placeholder="Titre ou nom de release…" autocomplete="off">
-            <button class="btn btn-solid" id="diagGo"><span data-icon="search"></span>Analyser</button>
-          </div>
-        </div>
-      </div>
-      <div id="diagOut"></div>
-    </div>
-
-    <!-- Réglages -->
+    <!-- ===== Réglages ===== -->
     <div class="page" id="page-settings">
 
       <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="key"></span>Sources de données</div><span id="tmdbBadge"></span></div>
+        <div class="section-header"><div class="section-title"><span data-icon="key"></span>TMDB</div><span id="tmdbBadge"></span></div>
         <div class="section-body">
-          <div class="opt-block">
-            <div class="t">Clé API TMDB</div>
-            <div class="d">Clé v3 (32 caractères) ou jeton v4 (long, commence par « eyJ »). Les deux fonctionnent.</div>
-            <div class="input-row">
-              <input class="form-input" id="tmdbKey" type="password" autocomplete="off" placeholder="Clé API v3 ou jeton v4">
-              <button class="btn btn-solid" id="tmdbSave">Enregistrer</button>
-              <button class="btn btn-ghost" id="tmdbTest">Tester</button>
-            </div>
-          </div>
-          <div class="opt-block">
-            <div class="t">dvdsreleasedates.com</div>
-            <div class="d" style="margin-bottom:0" id="dvdsInfo"></div>
+          <div class="t" style="font-weight:500">Clé API TMDB</div>
+          <div class="hint" style="margin:2px 0 12px">Clé v3 (32 caractères) ou jeton v4 (long, commence par « eyJ »). Les deux fonctionnent.</div>
+          <div class="input-row">
+            <input class="form-input" id="tmdbKey" type="password" autocomplete="off" placeholder="Clé API v3 ou jeton v4">
+            <button class="btn btn-solid" id="tmdbSave">Enregistrer</button>
+            <button class="btn btn-ghost" id="tmdbTest">Tester</button>
           </div>
         </div>
       </div>
@@ -484,7 +381,7 @@ details[open] summary{margin-bottom:12px}
         <div class="section-body">
           <div class="opt-block">
             <div class="t">Texte sous l'affiche</div>
-            <div class="d">Stremio n'affiche que l'affiche et un texte dans les catalogues. Effet en quelques minutes, sans réinstaller.</div>
+            <div class="d">Stremio n'affiche que l'affiche et un texte. Une sortie disponible en torrent reçoit toujours un ✅. Effet en quelques minutes, sans réinstaller.</div>
             <div class="seg" id="optTitle">
               <button data-f="plain">Titre seul</button><button data-f="episode">Titre + épisode</button><button data-f="episode_date">Titre + épisode + date</button><button data-f="date_only">Épisode + date, sans titre</button>
             </div>
@@ -493,72 +390,49 @@ details[open] summary{margin-bottom:12px}
           <div class="opt-block">
             <div class="setting-row">
               <div><div class="t">Ligne d'info dans les flux</div>
-                <div class="d" style="margin-bottom:0">Affiche « 🆕 Sortie récente » avec l'épisode, la date et la version en haut de la liste des flux d'un titre du catalogue (ce n'est pas un flux lisible). <b>Après changement, désinstallez puis réinstallez l'addon dans Stremio.</b></div></div>
+                <div class="d" style="margin-bottom:0">Affiche « 📣 Sortie annoncée » ou « ✅ Torrent disponible » avec la date en haut de la liste des flux d'un titre du catalogue (ce n'est pas un flux lisible). <b>Après changement, désinstallez puis réinstallez l'addon dans Stremio.</b></div></div>
               <label class="switch"><input type="checkbox" id="optStream"><span></span></label>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Nouveaux torrents</div></div>
-        <div class="section-body">
           <div class="opt-block">
-            <div class="setting-row">
-              <div><div class="t">Catalogues « Nouveaux torrents »</div>
-                <div class="d" style="margin-bottom:0">Ajoute deux catalogues dans Stremio (films et séries) avec tout ce qui vient d'être mis en ligne sur vos trackers, sans appliquer les règles de date : un titre y apparaît dès qu'il est identifié sur TMDB. <b>Après changement, désinstallez puis réinstallez l'addon dans Stremio.</b></div></div>
-              <label class="switch"><input type="checkbox" id="optNew"><span></span></label>
-            </div>
-          </div>
-          <div class="opt-block">
-            <div class="t">Période affichée</div>
-            <div class="d">Un torrent reste dans ces catalogues pendant ce délai après sa mise en ligne.</div>
-            <select class="form-input" id="optNewHours"><option value="12">12 heures</option><option value="24">24 heures (aujourd'hui)</option><option value="48">48 heures</option><option value="72">72 heures</option><option value="168">7 jours</option></select>
-          </div>
-          <div class="opt-block">
-            <div class="setting-row">
-              <div><div class="t">Masquer les CAM / TS / TELESYNC</div><div class="d" style="margin-bottom:0">Ignore les releases de mauvaise qualité enregistrées en salle.</div></div>
-              <label class="switch"><input type="checkbox" id="optCam"><span></span></label>
-            </div>
+            <div class="t">Durée dans le catalogue</div>
+            <div class="d">Une annonce reste visible ce temps-là après sa publication sur Telegram.</div>
+            <select class="form-input" id="optKeep"><option value="3">3 jours</option><option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours</option></select>
           </div>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Mise à jour automatique</div><span id="autoBadge"></span></div>
+        <div class="section-header"><div class="section-title"><span data-icon="layers"></span>Disponibilité en torrent</div></div>
         <div class="section-body">
+          <p class="hint" style="margin-top:0;margin-bottom:14px">À chaque cycle, l'addon cherche sur vos trackers les sorties annoncées (8 vérifications par cycle). Ces filtres décident ce qui compte comme « disponible ».</p>
           <div class="opt-block">
-            <div class="t">Fréquence</div>
-            <div class="d">Quand vous ouvrez Stremio et que les catalogues n'ont pas été mis à jour depuis ce délai, l'addon cherche les nouveautés tout seul en arrière-plan. Vous les voyez à l'ouverture suivante. <b>Rien d'autre à configurer.</b></div>
-            <select class="form-input" id="optAuto">
-              <option value="0">Désactivée</option><option value="15">Toutes les 15 minutes</option><option value="30">Toutes les 30 minutes (recommandé)</option>
-              <option value="60">Toutes les heures</option><option value="120">Toutes les 2 heures</option><option value="360">Toutes les 6 heures</option>
-            </select>
+            <div class="t">Qualité minimale</div>
+            <div class="d">Un torrent en dessous de cette résolution ne compte pas (si la résolution n'est pas indiquée, il passe).</div>
+            <select class="form-input" id="optMinRes"><option value="0">Aucun minimum</option><option value="480">480p et plus</option><option value="720">720p et plus</option><option value="1080">1080p et plus</option><option value="2160">2160p (4K) uniquement</option></select>
           </div>
-          <details>
-            <summary>Avancé : déclencheur externe (facultatif)</summary>
-            <p class="hint" style="margin-top:0">Utile seulement pour des mises à jour même quand Stremio est fermé. Programmez cette URL sur un service gratuit comme cron-job.org (remplacez <code>SECRET</code> par votre variable <code>CRON_SECRET</code> de Vercel). Un cycle s'arrête à <span id="budgetS">50</span> s et reprend au suivant.</p>
-            <div class="copy-line" style="margin-top:10px"><code id="cronUrl"></code><button class="btn btn-ghost btn-small" id="copyCron"><span data-icon="copy"></span>Copier</button></div>
-          </details>
+          <div class="opt-block">
+            <div class="setting-row"><div><div class="t">Ignorer les CAM / TS / TELESYNC</div><div class="d" style="margin-bottom:0">Une release enregistrée en salle ne compte pas comme une vraie sortie.</div></div><label class="switch"><input type="checkbox" id="optCam"><span></span></label></div>
+          </div>
         </div>
       </div>
 
       <div class="section">
         <div class="section-header"><div class="section-title"><span data-icon="bell"></span>Notifications</div><span id="notifyBadge"></span></div>
         <div class="section-body">
-          <p class="hint" style="margin-top:0;margin-bottom:14px">Recevez un message à chaque nouveauté détectée, même quand Stremio est fermé (un message par titre ou épisode, au plus 10 par cycle).</p>
+          <p class="hint" style="margin-top:0;margin-bottom:14px">Recevez un message quand une sortie est annoncée ou quand son torrent devient disponible (un message par titre ou épisode, jamais deux fois, au plus 10 par cycle).</p>
           <div class="opt-grid">
             <div><div class="t">Discord</div><div class="d">Paramètres du salon &gt; Intégrations &gt; Webhooks &gt; copier l'URL.</div>
               <input class="form-input" id="ntDiscord" type="password" autocomplete="off" placeholder="https://discord.com/api/webhooks/…"></div>
             <div><div class="t">Telegram</div><div class="d">Jeton du bot (via @BotFather) et identifiant de la conversation.</div>
               <input class="form-input" id="ntToken" type="password" autocomplete="off" placeholder="Jeton du bot, ex : 123456:ABC…" style="margin-bottom:8px">
-              <input class="form-input" id="ntChat" type="text" autocomplete="off" placeholder="Identifiant de conversation, ex : 123456789 ou @canal"></div>
+              <input class="form-input" id="ntChat" type="text" autocomplete="off" placeholder="Identifiant, ex : 123456789 ou @canal"></div>
           </div>
           <div class="opt-block" style="margin-top:18px">
-            <div class="setting-row"><div><div class="t">Sorties validées</div><div class="d" style="margin-bottom:0">Les films et épisodes des catalogues « récents » (version Toutes).</div></div><label class="switch"><input type="checkbox" id="ntValid"><span></span></label></div>
+            <div class="setting-row"><div><div class="t">Quand le torrent est disponible</div><div class="d" style="margin-bottom:0">« ✅ Disponible en torrent » : le message le plus utile.</div></div><label class="switch"><input type="checkbox" id="ntAvail"><span></span></label></div>
           </div>
           <div class="opt-block">
-            <div class="setting-row"><div><div class="t">Nouveaux torrents</div><div class="d" style="margin-bottom:0">Tout ce qui est mis en ligne : peut faire beaucoup de messages.</div></div><label class="switch"><input type="checkbox" id="ntNew"><span></span></label></div>
+            <div class="setting-row"><div><div class="t">Quand une sortie est annoncée</div><div class="d" style="margin-bottom:0">« 📣 Nouvelle sortie annoncée » : dès que Telegram publie l'image.</div></div><label class="switch"><input type="checkbox" id="ntAnn"><span></span></label></div>
           </div>
           <div class="section-buttons" style="margin-top:18px">
             <button class="btn btn-solid" id="ntSave">Enregistrer</button>
@@ -570,70 +444,27 @@ details[open] summary{margin-bottom:12px}
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="filter"></span>Filtres</div></div>
+        <div class="section-header"><div class="section-title"><span data-icon="clock"></span>Mise à jour automatique</div><span id="autoBadge"></span></div>
         <div class="section-body">
           <div class="opt-block">
-            <div class="t">Qualité minimale</div>
-            <div class="d">Les releases en dessous de cette résolution sont ignorées (celles dont la résolution n'est pas indiquée passent). S'applique aux catalogues « récents » et « nouveaux torrents ».</div>
-            <select class="form-input" id="optMinRes"><option value="0">Aucun minimum</option><option value="480">480p et plus</option><option value="720">720p et plus</option><option value="1080">1080p et plus</option><option value="2160">2160p (4K) uniquement</option></select>
+            <div class="t">Fréquence</div>
+            <div class="d">Quand vous ouvrez Stremio et que les données n'ont pas été mises à jour depuis ce délai, l'addon lit le canal et vérifie les trackers tout seul en arrière-plan. <b>Pour une lecture même quand Stremio est fermé</b> (annonce vers 1 h du matin), ajoutez le déclencheur externe ci-dessous.</div>
+            <select class="form-input" id="optAuto">
+              <option value="0">Désactivée</option><option value="15">Toutes les 15 minutes</option><option value="30">Toutes les 30 minutes (recommandé)</option>
+              <option value="60">Toutes les heures</option><option value="120">Toutes les 2 heures</option><option value="360">Toutes les 6 heures</option>
+            </select>
           </div>
-          <div class="opt-block">
-            <div class="t">Mots exclus</div>
-            <div class="d">Une release dont le nom contient l'un de ces mots est ignorée. Séparez par des virgules ou des retours à la ligne (ex : <code>3d, hdr10+, dolby vision</code>).</div>
-            <textarea class="form-input" id="optWords" maxlength="500" placeholder="3d, hdr10+, dolby vision"></textarea>
-            <div class="section-buttons" style="margin-top:10px"><button class="btn btn-solid btn-small" id="wordsSave">Enregistrer les mots</button></div>
-          </div>
-          <div class="opt-block">
-            <div class="t">Titres masqués<span class="section-count" id="blkCount" style="margin-left:8px"></span></div>
-            <div class="d">Titres bloqués depuis l'onglet Catalogues : ils n'apparaissent plus nulle part.</div>
-            <div id="blkList"></div>
-          </div>
-          <p class="hint">Après un changement de filtre, utilisez « Retraiter les rejetés » (Maintenance) pour réexaminer les torrents déjà vus.</p>
+          <details>
+            <summary>Déclencheur externe (recommandé pour les annonces de nuit)</summary>
+            <p class="hint" style="margin-top:0">Programmez cette URL toutes les 10 minutes sur un service gratuit comme cron-job.org (remplacez <code>SECRET</code> par votre variable <code>CRON_SECRET</code> de Vercel). Un cycle s'arrête à <span id="budgetS">50</span> s et reprend au suivant.</p>
+            <div class="copy-line" style="margin-top:10px"><code id="cronUrl"></code><button class="btn btn-ghost btn-small" id="copyCron"><span data-icon="copy"></span>Copier</button></div>
+          </details>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="layers"></span>Règles de tri</div><button class="btn btn-ghost btn-small" id="rulesReset">Valeurs d'origine</button></div>
-        <div class="section-body">
-          <div class="opt-block">
-            <div class="setting-row">
-              <div><div class="t">Inclure les films récents dont c'est le premier torrent</div>
-                <div class="d" style="margin-bottom:0">Un film dont la sortie numérique est ancienne est quand même accepté si : release WEB/BluRay, film sorti il y a moins d'un an, et aucun torrent de ce film n'existait sur vos trackers depuis plus de 3 jours. Évite de rater un film dont le premier bon torrent n'arrive que tard.</div></div>
-              <label class="switch"><input type="checkbox" id="optFirst"><span></span></label>
-            </div>
-          </div>
-          <div class="opt-block">
-            <div class="opt-grid">
-              <div><div class="t">Film : sortie numérique récente</div><div class="d">Âge maximum de la date de sortie numérique/physique la plus ancienne.</div>
-                <select class="form-input" id="optDigital"><option value="3">3 jours</option><option value="7">7 jours (origine)</option><option value="14">14 jours</option><option value="30">30 jours</option></select></div>
-              <div><div class="t">Épisode : diffusion récente</div><div class="d">Âge maximum de la date de diffusion TMDB de l'épisode.</div>
-                <select class="form-input" id="optEpisode"><option value="24">24 heures</option><option value="48">48 heures (origine)</option><option value="72">72 heures</option><option value="168">7 jours</option></select></div>
-              <div><div class="t">Saison complète</div><div class="d">Âge maximum du dernier épisode diffusé de la saison.</div>
-                <select class="form-input" id="optSeason"><option value="3">3 jours</option><option value="7">7 jours (origine)</option><option value="14">14 jours</option></select></div>
-              <div><div class="t">Durée dans le catalogue</div><div class="d">Après ce délai, un titre disparaît du catalogue.</div>
-                <select class="form-input" id="optKeep"><option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours (origine)</option><option value="60">60 jours</option></select></div>
-            </div>
-          </div>
-          <p class="hint">Plus les fenêtres sont larges, plus le risque de voir apparaître un titre qui n'est pas vraiment une nouveauté augmente. Pour retester les torrents déjà rejetés après un changement, utilisez « Retraiter les rejetés » ci-dessous.</p>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-header"><div class="section-title"><span data-icon="trash"></span>Maintenance</div></div>
-        <div class="section-body">
-          <div class="opt-block">
-            <div class="setting-row">
-              <div><div class="t">Retraiter les rejetés</div><div class="d" style="margin-bottom:0">Tous les torrents déjà examinés seront réexaminés au prochain cycle. Les catalogues actuels sont conservés.</div></div>
-              <button class="btn btn-ghost" id="seenBtn"><span data-icon="replay"></span>Retraiter</button>
-            </div>
-          </div>
-          <div class="opt-block">
-            <div class="setting-row">
-              <div><div class="t">Vider les catalogues</div><div class="d" style="margin-bottom:0">Les 3 versions (Toutes, VF, VFF) sont vidées et tout sera réexaminé au prochain cycle.</div></div>
-              <button class="btn btn-danger" id="clearBtn"><span data-icon="trash"></span>Vider</button>
-            </div>
-          </div>
-        </div>
+        <div class="section-header"><div class="section-title"><span data-icon="block"></span>Titres masqués<span class="section-count" id="blkCount"></span></div></div>
+        <div class="section-body"><div class="hint" style="margin:0 0 12px">Titres bloqués depuis l'onglet Annonces : ils n'apparaissent plus nulle part.</div><div id="blkList"></div></div>
       </div>
 
     </div>
@@ -643,7 +474,7 @@ details[open] summary{margin-bottom:12px}
 
 <div class="toast-container" id="toasts"></div>
 
-<!-- Modale tracker -->
+<!-- Fenêtre tracker -->
 <div class="modal" id="trModal">
   <div class="modal-content">
     <div class="modal-title" id="trModalTitle">Ajouter un tracker</div>
@@ -659,17 +490,17 @@ details[open] summary{margin-bottom:12px}
   </div>
 </div>
 
-<!-- Modale d'installation -->
+<!-- Fenêtre d'installation -->
 <div class="modal" id="installModal">
-  <div class="modal-content" style="max-width:560px">
+  <div class="modal-content" style="max-width:520px">
     <div class="modal-title">Installer dans Stremio</div>
-    <div class="modal-sub">Choisissez la version. Collez le lien dans Stremio (Addons, Installer depuis une URL) si le bouton ne s'ouvre pas.</div>
-    <div id="installBody"></div>
+    <div class="modal-sub">Collez le lien dans Stremio (Addons, Installer depuis une URL) si le bouton ne s'ouvre pas.</div>
+    <div class="install-row" id="installBody"></div>
     <div class="modal-actions" style="margin-top:18px"><a class="btn btn-ghost" href="/configure" target="_blank" rel="noopener">Page /configure</a><button class="btn btn-solid" id="installClose">Fermer</button></div>
   </div>
 </div>
 
-<!-- Modale de confirmation -->
+<!-- Fenêtre de confirmation -->
 <div class="modal" id="confirmModal">
   <div class="modal-content" style="max-width:400px">
     <div class="confirm-icon" id="cfIcon"></div>
@@ -696,7 +527,6 @@ const ICONS = {
   add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
   play: 'M8 5v14l11-7z',
   copy: 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z',
-  tv: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z',
   star: 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z',
   check: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
   warning: 'M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z',
@@ -705,13 +535,12 @@ const ICONS = {
   layers: 'M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z',
   key: 'M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z',
   tune: 'M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z',
+  list: 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
+  search: 'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
   send: 'M2.01 21L23 12 2.01 3 2 10l15 2-15 2z',
   bell: 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z',
   block: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z',
-  filter: 'M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z',
   link: 'M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z',
-  list: 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
-  search: 'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',
 };
 const svg = n => `<svg viewBox="0 0 24 24" width="18" height="18"><path d="${ICONS[n]}"/></svg>`;
 const icon = n => { const s = document.createElement('span'); s.style.display = 'inline-flex'; s.innerHTML = svg(n); return s; };
@@ -729,7 +558,7 @@ function h(tag, props, ...kids) {
   return e;
 }
 
-/* ---------- Notifications & confirmation ---------- */
+/* ---------- Notifications et confirmation ---------- */
 function toast(type, title, msg) {
   const t = h('div', { class: 'toast ' + type }, h('span', { class: 'toast-icon' }, icon(type === 'error' || type === 'warning' ? 'warning' : type === 'info' ? 'info' : 'check')),
     h('div', {}, h('div', { class: 'toast-title' }, title), msg ? h('div', { class: 'toast-message' }, msg) : ''));
@@ -766,28 +595,22 @@ function ago(t) {
   if (s < 86400) return 'il y a ' + Math.round(s / 3600) + ' h';
   return 'il y a ' + Math.round(s / 86400) + ' j';
 }
-function inFuture(t) {
-  const m = Math.max(1, Math.round((t - Date.now()) / 60000));
-  return m < 60 ? 'dans ' + m + ' min' : 'dans ' + Math.round(m / 60) + ' h';
-}
+function inFuture(t) { const m = Math.max(1, Math.round((t - Date.now()) / 60000)); return m < 60 ? 'dans ' + m + ' min' : 'dans ' + Math.round(m / 60) + ' h'; }
 async function copy(text) {
   try { await navigator.clipboard.writeText(text); toast('success', 'Copié'); }
   catch { const i = h('textarea'); i.value = text; document.body.append(i); i.select(); document.execCommand('copy'); i.remove(); toast('success', 'Copié'); }
 }
-const fullDate = t => new Date(t).toLocaleDateString('fr-FR');
+const ep2 = (s, e) => s != null ? 'S' + String(s).padStart(2, '0') + (e != null ? 'E' + String(e).padStart(2, '0') : '') : '';
 
 /* ---------- Navigation ---------- */
-const PAGES = ['dashboard', 'trackers', 'catalog', 'telegram', 'log', 'diag', 'settings'];
-let S = null, page = (location.hash || '#dashboard').slice(1);
+const PAGES = ['dashboard', 'annonces', 'telegram', 'trackers', 'settings'];
+let S = null, TG = null, page = (location.hash || '#dashboard').slice(1);
 function goto(p) {
   if (!PAGES.includes(p)) p = 'dashboard';
   page = p; history.replaceState(null, '', '#' + p);
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.page === p));
   document.querySelectorAll('.page').forEach(x => x.classList.toggle('active', x.id === 'page-' + p));
-  if (p === 'catalog') loadCatalog();
-  if (p === 'log') loadLog();
-  if (p === 'telegram') loadTg();
-  if (p === 'diag') $('#diagQ').focus();
+  if (p === 'annonces' || p === 'telegram') loadTg();
   window.scrollTo(0, 0);
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('.nav-tab'); if (b) goto(b.dataset.page); });
@@ -808,12 +631,12 @@ async function load(full) {
   renderHeader(); renderDashboard(); renderTrackers();
   if (full) { renderSettings(); renderInstall(); goto(page); }
 }
-
 function renderHeader() {
   const r = S.run, pill = $('#cyclePill');
   pill.className = 'pill ' + (r.busy ? 'busy' : r.last ? 'ok' : 'idle');
   $('#cycleText').textContent = r.busy ? 'Cycle en cours…' : r.last ? 'Dernier cycle ' + ago(r.last) : 'Aucun cycle';
   $('#runBtn').disabled = r.busy;
+  $('#reviewDot').hidden = !S.tg.review; $('#reviewDot').textContent = S.tg.review;
 }
 
 /* ---------- Tableau de bord ---------- */
@@ -821,64 +644,39 @@ function statCard(ic, tone, label, value, sub) {
   return h('div', { class: 'stat-card' }, h('div', { class: 'stat-card-header' }, h('div', { class: 'stat-icon ' + tone }, icon(ic)), h('div', { class: 'stat-label' }, label)),
     h('div', { class: 'stat-value' }, value), sub ? h('div', { class: 'stat-sub' }, sub) : '');
 }
+function posterCard(i) {
+  return h('div', { class: 'poster-card' }, i.poster ? h('img', { src: i.poster, alt: '', loading: 'lazy' }) : h('div', { class: 'noimg' }, icon('film')),
+    i.status === 'available' ? h('span', { class: 'tick' }, '✅ dispo') : '',
+    h('div', { class: 'pc-body' }, h('div', { class: 'pc-name' }, i.name), h('div', { class: 'pc-desc' }, i.desc), h('div', { class: 'pc-desc' }, ago(i.ts))));
+}
 function renderDashboard() {
-  const c = S.counts.all || { movies: 0, series: 0, anime: 0 }, r = S.run, st = S.settings;
-  const act = S.trackers.filter(t => t.enabled).length;
+  const r = S.run, st = S.settings, tg = S.tg, act = S.trackers.filter(t => t.enabled).length;
   let next, nextSub = '';
-  if (!st.autoRefreshMin) { next = 'Désactivée'; nextSub = 'Réglages > Mise à jour automatique'; }
+  if (!tg.enabled) { next = 'Inactive'; nextSub = 'Source Telegram désactivée'; }
+  else if (!st.autoRefreshMin) { next = 'Désactivée'; nextSub = 'Réglages > Mise à jour automatique'; }
   else if (S.autoNext && S.autoNext > Date.now()) { next = inFuture(S.autoNext); nextSub = 'si vous ouvrez Stremio'; }
   else { next = 'À l\'ouverture'; nextSub = 'de Stremio'; }
   $('#stats').replaceChildren(
-    statCard('film', 'primary', 'Films', c.movies, 'Toutes les versions'),
-    statCard('tv', 'info', 'Séries', c.series, 'Toutes les versions'),
-    statCard('star', 'warning', 'Animés', c.anime, 'Toutes les versions'),
-    statCard('server', act ? 'success' : 'danger', 'Trackers actifs', act + ' / ' + S.trackers.length, act ? '' : 'Aucun tracker actif'),
-    statCard('clock', r.busy ? 'primary' : 'success', 'Dernier cycle', r.busy ? 'En cours' : ago(r.last), r.ms ? 'Durée : ' + Math.round(r.ms / 1000) + ' s' + (r.postponed ? ' · ' + r.postponed + ' reporté(s)' : '') : ''),
-    statCard('refresh', st.autoRefreshMin ? 'info' : 'warning', 'Prochaine mise à jour', next, nextSub),
-    ...(S.tg.enabled ? [statCard('send', S.tg.lastError ? 'warning' : 'success', 'Annonces Telegram', S.tg.count, S.tg.review ? S.tg.review + ' à vérifier' : S.tg.available + ' avec torrent dispo')] : [])
+    statCard('film', 'primary', 'Annonces', tg.count, 'dans le catalogue'),
+    statCard('check', tg.available ? 'success' : 'info', 'Disponibles en torrent', tg.available, tg.count ? Math.round(tg.available / tg.count * 100) + ' % des annonces' : ''),
+    statCard('warning', tg.review ? 'warning' : 'success', 'À vérifier', tg.review, tg.review ? 'onglet Annonces' : 'rien en attente'),
+    statCard('send', tg.enabled ? (tg.lastError ? 'warning' : 'success') : 'danger', 'Lecture Telegram', tg.lastRun ? ago(tg.lastRun) : 'jamais', tg.enabled ? '@' + tg.channel : 'désactivée'),
+    statCard('server', act ? 'success' : 'warning', 'Trackers actifs', act + ' / ' + S.trackers.length, act ? '' : 'pas de badge ✅ sans tracker'),
+    statCard('refresh', st.autoRefreshMin && tg.enabled ? 'info' : 'warning', 'Prochaine mise à jour', next, nextSub)
   );
-
-  // dernières sorties
-  $('#latest').replaceChildren(S.latest && S.latest.length ? h('div', { class: 'latest-grid' }, S.latest.map(i => h('div', { class: 'poster-card' },
-    i.poster ? h('img', { src: i.poster, alt: '', loading: 'lazy' }) : h('div', { class: 'noimg' }, icon('film')),
-    h('div', { class: 'pc-body' }, h('div', { class: 'pc-name' }, i.name), h('div', { class: 'pc-desc' }, i.desc), h('div', { class: 'pc-desc' }, ago(i.ts)))))) :
-    h('div', { class: 'empty' }, 'Aucun titre pour le moment. Lancez un cycle ou ouvrez Stremio : la mise à jour se fait toute seule.'));
-
-  // nouveaux torrents
-  $('#freshSec').hidden = !st.newTorrents;
-  $('#freshCount').textContent = S.newCount ? S.newCount + ' titre(s) · dernières ' + (st.newHours >= 168 ? '7 jours' : st.newHours + ' h') : '';
-  $('#fresh').replaceChildren(S.newest && S.newest.length ? h('div', { class: 'latest-grid' }, S.newest.map(i => h('div', { class: 'poster-card' },
-    i.poster ? h('img', { src: i.poster, alt: '', loading: 'lazy' }) : h('div', { class: 'noimg' }, icon('film')),
-    h('div', { class: 'pc-body' }, h('div', { class: 'pc-name' }, i.name), h('div', { class: 'pc-desc' }, i.desc), h('div', { class: 'pc-desc' }, ago(i.ts)))))) :
-    h('div', { class: 'empty' }, 'Aucun nouveau torrent identifié pour le moment. Ils apparaissent après un cycle.'));
-
-  // versions
-  $('#langRows').replaceChildren(...Object.keys(S.langs).map(l => {
-    const k = S.counts[l] || { movies: 0, series: 0, anime: 0 }, s = r.stats[l];
-    const n = v => h('td', { class: 'num' }, s ? v : '—');
-    return h('tr', {}, h('td', {}, h('b', {}, S.langs[l])), h('td', { class: 'num' }, k.movies), h('td', { class: 'num' }, k.series), h('td', { class: 'num' }, k.anime),
-      n(s && s.neuf), n(s && s.ok), n(s && s.ko), h('td', { class: 'num' }, s ? (s.err ? h('span', { class: 'badge danger' }, s.err) : 0) : '—'));
-  }));
-
-  // activité
-  const max = Math.max(1, ...S.activity.map(a => a.n));
-  $('#bars').replaceChildren(...S.activity.map((a, i) => h('div', { class: 'bar', title: a.d + ' : ' + a.n + ' titre(s)' },
-    h('div', { class: 'n' }, a.n || ''), h('div', { class: 'col' + (a.n ? '' : ' zero'), style: 'height:' + (a.n ? Math.max(6, Math.round(a.n / max * 82)) : 3) + '%' }),
-    h('div', { class: 'l' }, i % 2 === 0 ? a.d.slice(0, 5) : ''))));
-
-  // historique des cycles
-  $('#history').replaceChildren(S.history && S.history.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Durée', 'Examinés', 'Validés (Toutes / VF / VFF)', 'Erreurs', 'Reportés'].map(x => h('th', {}, x)))),
-    h('tbody', {}, S.history.slice(0, 10).map(x => h('tr', {}, h('td', {}, h('small', {}, ago(x.t))), h('td', { class: 'num' }, Math.round(x.ms / 1000) + ' s'), h('td', { class: 'num' }, x.neuf),
-      h('td', { class: 'num' }, x.ok.all + ' / ' + x.ok.vf + ' / ' + x.ok.vff), h('td', { class: 'num' }, x.err ? h('span', { class: 'badge danger' }, x.err) : 0), h('td', { class: 'num' }, x.postponed || 0))))) :
+  $('#latest').replaceChildren(S.latest.length ? h('div', { class: 'latest-grid' }, S.latest.map(posterCard)) :
+    h('div', { class: 'empty' }, tg.enabled ? 'Aucune annonce pour le moment. Cliquez sur « Lancer un cycle » ou attendez la prochaine image du canal.' : 'Activez la source Telegram (onglet Telegram) pour remplir les catalogues.'));
+  $('#history').replaceChildren(S.history.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Durée', 'Publications', 'Titres lus', 'Ajoutés', 'À vérifier', 'Devenus dispo', 'Erreur'].map(x => h('th', {}, x)))),
+    h('tbody', {}, S.history.slice(0, 10).map(x => h('tr', {}, h('td', {}, h('small', {}, ago(x.t))), h('td', { class: 'num' }, Math.round(x.ms / 1000) + ' s'), h('td', { class: 'num' }, x.posts), h('td', { class: 'num' }, x.read),
+      h('td', { class: 'num' }, x.auto), h('td', { class: 'num' }, x.review || 0), h('td', { class: 'num' }, x.found || 0), h('td', {}, x.err ? h('span', { class: 'badge danger' }, 'oui') : ''))))) :
     h('div', { class: 'empty' }, 'Aucun cycle enregistré pour le moment.'));
 
-  // démarrage guidé
-  const total = c.movies + c.series + c.anime;
   const steps = [
     [S.tmdb.set, 'Clé TMDB enregistrée', 'Onglet Réglages', 'settings'],
-    [act > 0, 'Au moins un tracker actif', 'Onglet Trackers', 'trackers'],
+    [!!tg.keyHint, 'Clé Gemini enregistrée', 'Onglet Telegram', 'telegram'],
+    [tg.enabled, 'Lecture du canal activée', 'Onglet Telegram', 'telegram'],
     [!!r.last, 'Premier cycle terminé', 'Bouton « Lancer un cycle »', null],
-    [total > 0, 'Des titres dans le catalogue', 'Ils apparaissent après un cycle réussi', 'catalog'],
+    [act > 0, 'Un tracker pour le badge ✅ (facultatif)', 'Onglet Trackers', 'trackers'],
   ];
   const left = steps.filter(x => !x[0]).length;
   $('#setup').hidden = !left;
@@ -886,312 +684,92 @@ function renderDashboard() {
   $('#setupBody').replaceChildren(...steps.map(([ok, t, d, go]) => h('div', { class: 'check' + (ok ? ' done' : '') }, h('span', { class: 'dotc' }, icon('check')),
     h('div', {}, h('div', { class: 't' }, t), h('div', { class: 'd' }, d)), !ok && go ? h('button', { class: 'btn btn-ghost btn-small go', onclick: () => goto(go) }, 'Y aller') : '')));
 
-  // alertes
   const al = [];
-  if (r.last && Date.now() - r.last > 24 * 3600e3) al.push(['warning', 'Données anciennes', 'Aucune mise à jour depuis ' + ago(r.last).replace('il y a ', '') + '. Ouvrez Stremio ou lancez un cycle (vérifiez aussi la fréquence dans Réglages).']);
+  if (r.last && tg.enabled && Date.now() - r.last > 24 * 3600e3) al.push(['warning', 'Données anciennes', 'Aucune mise à jour depuis ' + ago(r.last).replace('il y a ', '') + '. Ouvrez Stremio, lancez un cycle, ou ajoutez le déclencheur externe (Réglages).']);
   if (r.notifyError) al.push(['warning', 'Notifications en erreur', r.notifyError]);
-  if (S.tg.enabled && S.tg.review) al.push(['warning', S.tg.review + ' titre(s) Telegram à vérifier', 'Onglet Telegram : confirmez le bon titre TMDB en un clic.']);
-  if (S.tg.enabled && S.tg.lastError) al.push(['warning', 'Telegram : ' + S.tg.lastError, 'Onglet Telegram : « Tester la lecture du canal » pour diagnostiquer.']);
+  if (tg.enabled && tg.review) al.push(['warning', tg.review + ' titre(s) à vérifier', 'Onglet Annonces : confirmez le bon titre TMDB en un clic.']);
+  if (tg.enabled && tg.lastError) al.push(['warning', 'Telegram : ' + tg.lastError, 'Onglet Telegram : « Tester la lecture du canal » pour diagnostiquer.']);
   if (!S.tmdb.set) al.push(['danger', 'Clé TMDB manquante', 'Ajoutez-la dans Réglages : sans elle, aucun cycle ne peut tourner.']);
-  if (!S.trackers.length) al.push(['danger', 'Aucun tracker', 'Ajoutez votre premier tracker dans l\'onglet Trackers.']);
   S.trackers.filter(t => t.status && !t.status.ok).forEach(t => al.push(['warning', 'Tracker « ' + t.name + ' » en erreur', t.status.error]));
-  if (S.dvdsOn && !S.dvds && r.last) al.push(['warning', 'dvdsreleasedates.com : 0 date lue', 'Source ignorée (page inaccessible ou format à ajuster). Les films restent validés par les dates TMDB.']);
-  if (r.stats && Object.values(r.stats).some(x => x.err)) al.push(['warning', 'Erreurs transitoires', 'Certains torrents seront retentés au prochain cycle (voir le Journal).']);
   $('#alerts').hidden = !al.length;
   $('#alertsBody').replaceChildren(...al.map(([tone, t, d]) => h('div', { style: 'display:flex;gap:12px;align-items:flex-start;padding:6px 0' }, h('span', { class: 'badge ' + tone }, tone === 'danger' ? 'Action' : 'Info'), h('div', {}, h('b', {}, t), h('div', { class: 'hint', style: 'margin-top:2px' }, d)))));
 }
-
-$('#freshGo').onclick = () => { CAT.src = 'new'; CAT.lang = 'all'; goto('catalog'); };
-$('#runBtn').onclick = guard(async () => {
-  const b = $('#runBtn'); b.disabled = true; b.firstChild.classList.add('spin');
+async function runCycle(btn) {
+  btn.disabled = true; btn.firstChild.classList.add('spin');
   toast('info', 'Cycle lancé', 'Jusqu\'à ' + S.run.budgetS + ' s — ne fermez pas la page.');
   try { const x = await api('POST', '/refresh'); toast(x.skipped ? 'warning' : x.ok === false ? 'error' : 'success', x.skipped ? 'Cycle non lancé' : x.ok === false ? 'Erreur' : 'Cycle terminé', x.message); }
-  finally { b.firstChild.classList.remove('spin'); await load(false); }
-});
+  finally { btn.firstChild.classList.remove('spin'); await load(false); if (TG) await loadTg(); }
+}
+$('#runBtn').onclick = guard(() => runCycle($('#runBtn')));
 
-/* ---------- Trackers ---------- */
-function statusBadge(t) {
-  if (!t.enabled) return h('span', { class: 'badge muted' }, 'Désactivé');
-  if (!t.status) return h('span', { class: 'badge muted' }, 'Pas encore interrogé');
-  return t.status.ok ? h('span', { class: 'badge success' }, t.status.count + ' torrents') : h('span', { class: 'badge danger', title: t.status.error }, 'Erreur');
+/* ---------- Annonces (+ À vérifier) ---------- */
+let ANN = { state: 'all', type: 'all', q: '' };
+async function loadTg() {
+  try { TG = await api('GET', '/tg'); } catch (e) { toast('error', 'Erreur', e.message); return; }
+  renderAnnonces(); renderTg();
 }
-function renderTrackers() {
-  $('#trCount').textContent = S.trackers.length ? S.trackers.length + ' tracker(s)' : '';
-  const box = $('#trBody');
-  if (!S.trackers.length) { box.replaceChildren(h('div', { class: 'empty' }, 'Aucun tracker configuré. Cliquez sur « Ajouter un tracker ».')); return; }
-  box.replaceChildren(h('div', { class: 'table-container' }, h('table', {},
-    h('thead', {}, h('tr', {}, ['Nom', 'URL', 'Clé', 'État', 'Dernier relevé', 'Actif', ''].map(x => h('th', {}, x)))),
-    h('tbody', {}, S.trackers.map(t => {
-      const tst = h('button', { class: 'btn-icon', title: 'Tester la connexion' }, icon('play'));
-      tst.onclick = guard(async () => { tst.disabled = true; try { const r = await api('POST', `/trackers/${t.id}/test`); toast(r.ok ? 'success' : 'error', r.ok ? t.name : 'Échec du test', r.message); } finally { tst.disabled = false; } });
-      const sw = h('input', { type: 'checkbox', checked: t.enabled });
-      sw.onchange = guard(async () => { try { await api('PUT', '/trackers/' + t.id, { enabled: sw.checked }); await load(false); } catch (e) { sw.checked = !sw.checked; throw e; } });
-      return h('tr', {}, h('td', {}, h('b', {}, t.name)), h('td', { class: 'url-cell', title: t.url }, t.url), h('td', {}, h('code', {}, t.keyHint)),
-        h('td', {}, statusBadge(t)), h('td', {}, h('small', {}, t.status ? ago(t.status.last) : '—')),
-        h('td', {}, h('label', { class: 'switch' }, sw, h('span'))),
-        h('td', {}, h('div', { class: 'row-actions' }, tst,
-          h('button', { class: 'btn-icon', title: 'Modifier', onclick: () => openTracker(t) }, icon('edit')),
-          h('button', { class: 'btn-icon danger', title: 'Supprimer', onclick: guard(async () => {
-            if (!(await confirmBox({ title: 'Supprimer ce tracker ?', message: '« ' + t.name + ' » ne sera plus interrogé. Les titres déjà validés restent dans les catalogues.', yes: 'Supprimer' }))) return;
-            await api('DELETE', '/trackers/' + t.id); toast('success', 'Tracker supprimé'); await load(false);
-          }) }, icon('trash')))));
-    })))));
-}
-let editing = null;
-function openTracker(t) {
-  editing = t || null;
-  $('#trModalTitle').textContent = t ? 'Modifier le tracker' : 'Ajouter un tracker';
-  $('#trName').value = t ? t.name : ''; $('#trUrl').value = t ? t.url : ''; $('#trKey').value = '';
-  $('#trKey').placeholder = t ? 'Clé enregistrée (' + t.keyHint + ') — vide = inchangée' : 'Clé API du tracker';
-  $('#trEnabled').checked = t ? t.enabled : true;
-  $('#trModal').classList.add('show'); $('#trName').focus();
-}
-const closeTracker = () => $('#trModal').classList.remove('show');
-$('#addTr').onclick = () => openTracker(null);
-$('#trCancel').onclick = closeTracker;
-$('#trModal').addEventListener('mousedown', e => { if (e.target.id === 'trModal') closeTracker(); });
-$('#trSave').onclick = guard(async () => {
-  const body = { name: $('#trName').value, url: $('#trUrl').value, apikey: $('#trKey').value, enabled: $('#trEnabled').checked };
-  if (editing) await api('PUT', '/trackers/' + editing.id, body); else await api('POST', '/trackers', body);
-  closeTracker(); toast('success', editing ? 'Tracker modifié' : 'Tracker ajouté', 'Lancez un cycle pour le tester en conditions réelles.'); await load(false);
-});
-
-/* ---------- Catalogues ---------- */
-let CAT = { lang: 'all', type: 'all', q: '', src: 'valid', items: [] };
-async function loadCatalog() {
-  if (!S) return;
-  $('#catLang').replaceChildren(...Object.keys(S.langs).map(l => h('button', { class: l === CAT.lang ? 'active' : '', onclick: () => { CAT.lang = l; loadCatalog(); } }, S.langs[l])));
-  document.querySelectorAll('#catSrc button').forEach(b => b.classList.toggle('active', b.dataset.s === CAT.src));
-  try { CAT.items = await api('GET', '/catalog/' + CAT.lang + (CAT.src === 'new' ? '/new' : '')); } catch (e) { toast('error', 'Erreur', e.message); return; }
-  renderCatalog();
-}
-function renderCatalog() {
-  const q = CAT.q.trim().toLowerCase();
-  const list = CAT.items.filter(i => (CAT.type === 'all' || (CAT.type === 'anime' ? i.anime : CAT.type === 'movie' ? i.type === 'movie' : i.type === 'series' && !i.anime)) && (!q || i.name.toLowerCase().includes(q)));
-  $('#catCount').textContent = list.length + ' titre(s)';
-  $('#catBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['', 'Type', 'Titre', 'Détail', 'IMDb', 'Vu le', ''].map(x => h('th', {}, x)))),
+function renderAnnonces() {
+  // file « À vérifier »
+  $('#reviewSec').hidden = !TG.review.length;
+  $('#reviewCount').textContent = TG.review.length ? TG.review.length + ' titre(s)' : '';
+  $('#reviewBody').replaceChildren(...TG.review.map(r => {
+    const kind = h('select', { class: 'form-input', style: 'min-width:110px' }, h('option', { value: 'tv' }, 'Série'), h('option', { value: 'movie' }, 'Film'));
+    if (r.read.type === 'movie') kind.value = 'movie';
+    const tid = h('input', { class: 'form-input', style: 'max-width:150px', placeholder: 'ID TMDB', inputmode: 'numeric' });
+    const send = body => guard(async () => { await api('POST', '/tg/review', { id: r.id, ...body }); toast('success', 'Enregistré'); await loadTg(); await load(false); })();
+    return h('div', { class: 'diag-card' },
+      h('div', { class: 'diag-head' }, h('span', { class: 'badge warning' }, 'À vérifier'), h('b', {}, r.read.title), h('small', { style: 'color:var(--text-muted)' }, [ep2(r.read.season, r.read.episode), r.date, r.read.note].filter(Boolean).join(' · '))),
+      h('div', { class: 'diag-info' }, r.reason),
+      r.image ? h('a', { href: r.image, target: '_blank', rel: 'noopener' }, h('img', { src: r.image, referrerpolicy: 'no-referrer', alt: '', style: 'max-height:130px;border-radius:8px;margin-bottom:10px;display:block' })) : '',
+      h('div', { class: 'row-actions', style: 'justify-content:flex-start;margin-bottom:10px' },
+        ...r.candidates.map((cd, i) => h('button', { class: 'btn btn-primary btn-small', onclick: () => send({ action: 'accept', index: i }) }, (cd.kind === 'movie' ? 'Film : ' : 'Série : ') + cd.name + ' (' + (cd.year || '?') + ') · ' + Math.round(cd.score * 100) + ' %'))),
+      h('div', { class: 'row-actions', style: 'justify-content:flex-start' }, kind, tid,
+        h('button', { class: 'btn btn-ghost btn-small', onclick: () => send({ action: 'manual', kind: kind.value, tmdbId: tid.value }) }, 'Valider cet ID TMDB'),
+        h('button', { class: 'btn btn-ghost btn-small', onclick: () => send({ action: 'ignore' }) }, 'Ignorer')));
+  }));
+  // liste
+  const q = ANN.q.trim().toLowerCase();
+  const list = TG.entries.filter(i => (ANN.state === 'all' || i.status === ANN.state) && (ANN.type === 'all' || i.type === ANN.type) && (!q || i.name.toLowerCase().includes(q)));
+  $('#annCount').textContent = list.length + ' titre(s)';
+  $('#annBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['', 'Type', 'Titre', 'Détail', 'État', ''].map(x => h('th', {}, x)))),
     h('tbody', {}, list.map(i => h('tr', {},
       h('td', { style: 'width:52px' }, i.poster ? h('img', { class: 'thumb', src: i.poster, loading: 'lazy', alt: '' }) : ''),
       h('td', {}, h('span', { class: 'badge ' + (i.anime ? 'warning' : i.type === 'movie' ? 'primary' : 'info') }, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série')),
       h('td', {}, h('b', {}, i.name), i.year ? h('small', {}, ' (' + i.year + ')') : ''), h('td', {}, h('small', {}, i.desc)),
-      h('td', {}, h('code', {}, i.id)), h('td', {}, h('small', {}, fullDate(i.ts))),
-      h('td', {}, h('div', { class: 'row-actions' }, h('a', { class: 'btn-icon', href: 'https://www.imdb.com/title/' + i.id + '/', target: '_blank', rel: 'noopener', title: 'Ouvrir sur IMDb' }, icon('link')),
+      h('td', {}, h('span', { class: 'badge ' + (i.status === 'available' ? 'success' : 'muted') }, i.status === 'available' ? 'Disponible' : 'Annoncé')),
+      h('td', {}, h('div', { class: 'row-actions' },
+        h('a', { class: 'btn-icon', href: 'https://www.imdb.com/title/' + i.id + '/', target: '_blank', rel: 'noopener', title: 'Ouvrir sur IMDb' }, icon('link')),
         h('button', { class: 'btn-icon danger', title: 'Masquer définitivement ce titre', onclick: guard(async () => {
-          if (!(await confirmBox({ title: 'Masquer ce titre pour toujours ?', message: '« ' + i.name + ' » ne réapparaîtra dans aucun catalogue, même avec un nouveau torrent. Vous pourrez le débloquer dans Réglages > Filtres.', yes: 'Masquer' }))) return;
-          await api('POST', '/block', { id: i.id, type: i.type, name: i.name }); toast('success', 'Titre masqué'); await loadCatalog(); await load(false);
+          if (!(await confirmBox({ title: 'Masquer ce titre pour toujours ?', message: '« ' + i.name + ' » ne réapparaîtra dans aucun catalogue. Vous pourrez le débloquer dans Réglages.', yes: 'Masquer' }))) return;
+          await api('POST', '/block', { id: i.id, type: i.type, name: i.name }); toast('success', 'Titre masqué'); await loadTg(); await load(false); renderBlocked();
         }) }, icon('block')),
-        h('button', { class: 'btn-icon danger', title: 'Retirer des catalogues', onclick: guard(async () => {
-        if (!(await confirmBox({ title: 'Retirer ce titre ?', message: '« ' + i.name + ' » sera retiré des 3 versions du catalogue. Il ne reviendra que si un nouveau torrent est validé.', yes: 'Retirer' }))) return;
-        await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadCatalog(); await load(false);
-      }) }, icon('trash')))))))) : h('div', { class: 'empty' }, CAT.items.length ? 'Aucun résultat pour ce filtre.' : CAT.src === 'new' ? 'Aucun nouveau torrent pour le moment.' : 'Catalogue vide pour le moment. Lancez un cycle depuis le tableau de bord.'));
+        h('button', { class: 'btn-icon danger', title: 'Retirer du catalogue', onclick: guard(async () => { await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadTg(); await load(false); }) }, icon('trash')))))))) :
+    h('div', { class: 'empty' }, TG.entries.length ? 'Aucun résultat pour ce filtre.' : S.tg.enabled ? 'Aucune annonce pour le moment. Cliquez sur « Lancer un cycle » (tableau de bord).' : 'Activez la source Telegram (onglet Telegram) pour remplir cette liste.'));
 }
-$('#catSrc').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { CAT.src = b.dataset.s; loadCatalog(); } });
-$('#catType').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; CAT.type = b.dataset.t; document.querySelectorAll('#catType button').forEach(x => x.classList.toggle('active', x === b)); renderCatalog(); });
-$('#catSearch').addEventListener('input', e => { CAT.q = e.target.value; renderCatalog(); });
-
-/* ---------- Journal ---------- */
-let LOG = { kind: 'all', q: '', items: [] };
-const LANG_SHORT = { all: 'Toutes', vf: 'VF', vff: 'VFF' };
-async function loadLog() {
-  try { LOG.items = await api('GET', '/log'); } catch (e) { toast('error', 'Erreur', e.message); return; }
-  renderLog();
-}
-function renderLog() {
-  const q = LOG.q.trim().toLowerCase();
-  const list = LOG.items.filter(x => (LOG.kind === 'all' || x.kind === LOG.kind) && (!q || x.title.toLowerCase().includes(q) || String(x.reason).toLowerCase().includes(q)));
-  $('#logCount').textContent = list.length + ' entrée(s)';
-  const tone = { ok: ['success', 'Accepté'], ko: ['muted', 'Rejeté'], err: ['danger', 'Erreur'] };
-  $('#logBody').replaceChildren(list.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Résultat', 'Version', 'Release', 'Raison / détail', 'Tracker', ''].map(x => h('th', {}, x)))),
-    h('tbody', {}, list.map(x => h('tr', {}, h('td', {}, h('small', {}, ago(x.t))), h('td', {}, h('span', { class: 'badge ' + tone[x.kind][0] }, tone[x.kind][1])),
-      h('td', {}, h('small', {}, LANG_SHORT[x.lang] || x.lang)), h('td', { class: 'mono' }, x.title), h('td', {}, x.reason), h('td', {}, h('small', {}, x.tr || '')),
-      h('td', {}, h('button', { class: 'btn-icon', title: 'Diagnostic détaillé', onclick: () => { goto('diag'); $('#diagQ').value = x.title; runDiag(); } }, icon('search'))))))) :
-    h('div', { class: 'empty' }, LOG.items.length ? 'Aucune entrée pour ce filtre.' : 'Le journal est vide. Il se remplit à chaque cycle.'));
-}
-$('#logKind').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; LOG.kind = b.dataset.k; document.querySelectorAll('#logKind button').forEach(x => x.classList.toggle('active', x === b)); renderLog(); });
-$('#logSearch').addEventListener('input', e => { LOG.q = e.target.value; renderLog(); });
-$('#logReload').onclick = guard(loadLog);
-$('#logClear').onclick = guard(async () => {
-  if (!(await confirmBox({ title: 'Effacer le journal ?', message: 'Seul l\'historique affiché ici est supprimé.', yes: 'Effacer' }))) return;
-  await api('DELETE', '/log'); toast('success', 'Journal effacé'); await loadLog();
+$('#annState').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ANN.state = b.dataset.s; document.querySelectorAll('#annState button').forEach(x => x.classList.toggle('active', x === b)); renderAnnonces(); });
+$('#annType').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ANN.type = b.dataset.t; document.querySelectorAll('#annType button').forEach(x => x.classList.toggle('active', x === b)); renderAnnonces(); });
+$('#annSearch').addEventListener('input', e => { ANN.q = e.target.value; renderAnnonces(); });
+$('#annClear').onclick = guard(async () => {
+  if (!(await confirmBox({ title: 'Tout effacer ?', message: 'Les annonces, la file « À vérifier » et le journal Telegram sont vidés.', yes: 'Effacer' }))) return;
+  await api('POST', '/tg/clear'); toast('success', 'Effacé'); await loadTg(); await load(false);
 });
-
-/* ---------- Diagnostic ---------- */
-const runDiag = guard(async () => {
-  const q = $('#diagQ').value.trim();
-  if (q.length < 2) return toast('warning', 'Recherche trop courte', 'Saisissez au moins 2 caractères.');
-  const out = $('#diagOut'), b = $('#diagGo'); b.disabled = true;
-  out.replaceChildren(h('div', { class: 'section' }, h('div', { class: 'empty' }, 'Analyse en cours… cela peut durer jusqu\'à 30 secondes.')));
-  try {
-    const r = await api('POST', '/explain', { q });
-    const cards = [];
-    r.errors.forEach(e => cards.push(h('div', { class: 'diag-card' }, h('span', { class: 'badge danger' }, 'Tracker en erreur'), ' ', e)));
-    if (!r.results.length) cards.push(h('div', { class: 'section' }, h('div', { class: 'empty' }, 'Aucun torrent trouvé sur vos trackers pour « ' + q + ' ». Essayez un autre mot, ou vérifiez que le tracker l\'a bien en ligne.')));
-    r.results.forEach(x => {
-      const inf = x.info || {};
-      cards.push(h('div', { class: 'diag-card' },
-        h('div', { class: 'diag-head' }, h('span', { class: 'badge ' + (x.kind === 'movie' ? 'primary' : 'info') }, x.kind === 'movie' ? 'Film' : 'Série'), h('span', { class: 'mono' }, x.title),
-          h('small', { style: 'color:var(--text-muted)' }, x.tracker + (x.pub ? ' · posté ' + ago(x.pub) : ''))),
-        inf.error ? h('div', { class: 'diag-info' }, h('span', { class: 'badge danger' }, 'TMDB'), ' ' + inf.error) :
-          h('div', { class: 'diag-info' }, h('b', {}, inf.title || '?'), inf.year ? ' (' + inf.year + ')' : '', ' · TMDB ' + inf.tmdbId, inf.imdb ? ' · ' : ' · pas d\'ID IMDb', inf.imdb ? h('code', {}, inf.imdb) : ''),
-        inf.lines ? h('div', { class: 'dates' }, inf.lines.map(([k, v]) => h('div', {}, h('b', {}, k), v))) : '',
-        ...Object.keys(S.langs).map(l => { const v = x.verdicts[l]; return h('div', { class: 'verdict' }, h('span', { class: 'lg' }, LANG_SHORT[l]),
-          h('span', { class: 'badge ' + (v.ok ? 'success' : v.err ? 'danger' : 'muted') }, v.ok ? 'Accepté' : v.err ? 'Erreur' : 'Rejeté'), h('span', {}, v.text)); })));
-    });
-    out.replaceChildren(...cards);
-  } finally { b.disabled = false; }
-});
-$('#diagGo').onclick = runDiag;
-$('#diagQ').addEventListener('keydown', e => { if (e.key === 'Enter') runDiag(); });
-
-/* ---------- Réglages ---------- */
-function titleExample(f) {
-  const t = 'Antigang';
-  return 'Exemple : ' + (f === 'plain' ? t : f === 'episode' ? t + ' · S02E15' : f === 'episode_date' ? t + ' · S02E15 · 30/09' : 'S02E15 · 30/09');
-}
-function renderAutoBadge() { $('#autoBadge').replaceChildren(h('span', { class: 'badge ' + (S.settings.autoRefreshMin ? 'success' : 'muted') }, S.settings.autoRefreshMin ? 'Active' : 'Désactivée')); }
-function renderSettings() {
-  const st = S.settings;
-  $('#tmdbBadge').replaceChildren(h('span', { class: 'badge ' + (S.tmdb.set ? 'success' : 'danger') }, S.tmdb.set ? 'Clé enregistrée ' + S.tmdb.hint : 'Non configurée'));
-  $('#tmdbKey').placeholder = S.tmdb.set ? 'Clé enregistrée — saisir une nouvelle valeur pour la remplacer' : 'Clé API v3 ou jeton v4';
-  $('#dvdsInfo').textContent = !S.dvdsOn ? 'Désactivée (variable DVDS=0). Les films sont validés par les dates TMDB uniquement.' :
-    S.dvds ? S.dvds + ' date(s) de sortie numérique américaine lue(s) : source active, relue toutes les 6 h.' : 'Aucune date lue : la source est ignorée (page inaccessible ou format à ajuster). Sans conséquence grave : les films restent validés par TMDB.';
-  $('#optStream').checked = st.streamInfo;
-  document.querySelectorAll('#optTitle button').forEach(b => b.classList.toggle('active', b.dataset.f === st.titleFormat));
-  $('#titleExample').textContent = titleExample(st.titleFormat);
-  $('#optAuto').value = String(st.autoRefreshMin); renderAutoBadge();
-  $('#optNew').checked = st.newTorrents; $('#optNewHours').value = String(st.newHours); $('#optCam').checked = st.newHideCam;
-  $('#optFirst').checked = st.movieFirstTorrent;
-  $('#optDigital').value = String(st.digitalDays); $('#optEpisode').value = String(st.episodeHours);
-  $('#optSeason').value = String(st.seasonDays); $('#optKeep').value = String(st.keepDays);
-  $('#cronUrl').textContent = location.origin + '/cron?key=SECRET';
-  $('#budgetS').textContent = S.run.budgetS;
-  renderNotify(); renderFilters();
-}
-const saveSetting = async (patch, msg) => { await api('PUT', '/settings', patch); Object.assign(S.settings, patch); toast('success', msg || 'Enregistré'); };
-$('#tmdbSave').onclick = guard(async () => {
-  const k = $('#tmdbKey').value.trim(); if (!k) return toast('error', 'Clé manquante', 'Saisissez une clé TMDB.');
-  await api('PUT', '/tmdb', { key: k }); $('#tmdbKey').value = ''; toast('success', 'Clé TMDB enregistrée'); await load(false); renderSettings();
-});
-$('#tmdbTest').onclick = guard(async () => { const r = await api('POST', '/tmdb/test', { key: $('#tmdbKey').value }); toast(r.ok ? 'success' : 'error', r.ok ? 'TMDB' : 'Échec du test', r.message); });
-$('#optTitle').addEventListener('click', guard(async e => {
-  const b = e.target.closest('button'); if (!b) return;
-  await saveSetting({ titleFormat: b.dataset.f }, 'Affichage enregistré — visible dans Stremio d\'ici quelques minutes');
-  document.querySelectorAll('#optTitle button').forEach(x => x.classList.toggle('active', x === b)); $('#titleExample').textContent = titleExample(b.dataset.f);
-}));
-$('#optStream').onchange = guard(async () => saveSetting({ streamInfo: $('#optStream').checked }, 'Option enregistrée — réinstallez l\'addon dans Stremio pour l\'appliquer'));
-$('#optAuto').onchange = guard(async () => { await saveSetting({ autoRefreshMin: +$('#optAuto').value }, 'Fréquence enregistrée'); renderAutoBadge(); renderDashboard(); });
-$('#optNew').onchange = guard(async () => { await saveSetting({ newTorrents: $('#optNew').checked }, 'Option enregistrée — réinstallez l\'addon dans Stremio pour voir les catalogues'); renderDashboard(); });
-$('#optNewHours').onchange = guard(async () => { await saveSetting({ newHours: +$('#optNewHours').value }, 'Période enregistrée'); renderDashboard(); });
-$('#optCam').onchange = guard(async () => saveSetting({ newHideCam: $('#optCam').checked }, 'Option enregistrée'));
-$('#optFirst').onchange = guard(async () => saveSetting({ movieFirstTorrent: $('#optFirst').checked }, 'Règle enregistrée — utilisez « Retraiter les rejetés » pour retester'));
-[['#optDigital', 'digitalDays'], ['#optEpisode', 'episodeHours'], ['#optSeason', 'seasonDays'], ['#optKeep', 'keepDays']].forEach(([sel, key]) => {
-  $(sel).onchange = guard(async () => saveSetting({ [key]: +$(sel).value }, 'Règle enregistrée — utilisez « Retraiter les rejetés » pour retester'));
-});
-$('#rulesReset').onclick = guard(async () => {
-  await saveSetting({ movieFirstTorrent: true, digitalDays: 7, episodeHours: 48, seasonDays: 7, keepDays: 30 }, 'Valeurs d\'origine rétablies'); renderSettings();
-});
-$('#copyCron').onclick = () => copy($('#cronUrl').textContent);
-$('#seenBtn').onclick = guard(async () => {
-  if (!(await confirmBox({ title: 'Retraiter les rejetés ?', message: 'Tous les torrents déjà examinés seront réexaminés au prochain cycle (utile après un changement de règle). Les catalogues actuels sont conservés.', yes: 'Retraiter', danger: false }))) return;
-  await api('POST', '/reset', { what: 'seen' }); toast('success', 'Torrents remis en file', 'Lancez un cycle depuis le tableau de bord.'); await load(false);
-});
-$('#clearBtn').onclick = guard(async () => {
-  if (!(await confirmBox({ title: 'Vider les catalogues ?', message: 'Les 3 versions (Toutes, VF, VFF) sont vidées et tout sera réexaminé au prochain cycle.', yes: 'Vider' }))) return;
-  await api('POST', '/reset', { what: 'items' }); toast('success', 'Catalogues vidés'); await load(false);
-});
-
-/* ---------- Notifications & filtres ---------- */
-function renderNotify() {
-  const n = S.notify;
-  $('#ntDiscord').value = ''; $('#ntToken').value = ''; $('#ntChat').value = n.telegramChat || '';
-  $('#ntDiscord').placeholder = n.discord ? 'Webhook enregistré (' + n.discord + ') — saisir une nouvelle URL pour le remplacer' : 'https://discord.com/api/webhooks/…';
-  $('#ntToken').placeholder = n.tokenHint ? 'Jeton enregistré (' + n.tokenHint + ') — vide = inchangé' : 'Jeton du bot, ex : 123456:ABC…';
-  $('#ntValid').checked = n.onValid; $('#ntNew').checked = n.onNew;
-  $('#ntClearD').hidden = !n.discord; $('#ntClearT').hidden = !n.tokenHint && !n.telegramChat;
-  $('#notifyBadge').replaceChildren(h('span', { class: 'badge ' + (n.discordOk || n.telegram ? 'success' : 'muted') }, [n.discordOk ? 'Discord' : '', n.telegram ? 'Telegram' : ''].filter(Boolean).join(' + ') || 'Aucun canal'));
-}
-function renderFilters() {
-  $('#optMinRes').value = String(S.settings.minRes); $('#optWords').value = S.settings.excludeWords || '';
-  $('#blkCount').textContent = S.blocked.length ? S.blocked.length + ' titre(s)' : '';
-  $('#blkList').replaceChildren(S.blocked.length ? h('div', {}, S.blocked.map(b => h('div', { class: 'blk' },
-    h('span', { class: 'badge ' + (b.type === 'movie' ? 'primary' : 'info') }, b.type === 'movie' ? 'Film' : 'Série'), h('span', { class: 'nm' }, h('b', {}, b.name), ' ', h('code', {}, b.id)),
-    h('button', { class: 'btn btn-ghost btn-small', onclick: guard(async () => { await api('DELETE', '/block/' + b.type + '/' + encodeURIComponent(b.id)); toast('success', 'Titre débloqué'); await load(false); renderFilters(); }) }, 'Débloquer')))) :
-    h('div', { class: 'hint', style: 'margin:0' }, 'Aucun titre masqué.'));
-}
-$('#ntSave').onclick = guard(async () => {
-  await api('PUT', '/notify', { discord: $('#ntDiscord').value, telegramToken: $('#ntToken').value, telegramChat: $('#ntChat').value, onValid: $('#ntValid').checked, onNew: $('#ntNew').checked });
-  toast('success', 'Notifications enregistrées'); await load(false); renderNotify();
-});
-$('#ntValid').onchange = guard(async () => { await api('PUT', '/notify', { onValid: $('#ntValid').checked }); S.notify.onValid = $('#ntValid').checked; toast('success', 'Enregistré'); });
-$('#ntNew').onchange = guard(async () => { await api('PUT', '/notify', { onNew: $('#ntNew').checked }); S.notify.onNew = $('#ntNew').checked; toast('success', 'Enregistré'); });
-$('#ntTest').onclick = guard(async () => { const r = await api('POST', '/notify/test'); toast(r.ok ? 'success' : 'error', r.ok ? 'Test envoyé' : 'Échec du test', r.message); });
-$('#ntClearD').onclick = guard(async () => { await api('PUT', '/notify', { clearDiscord: true }); toast('success', 'Discord retiré'); await load(false); renderNotify(); });
-$('#ntClearT').onclick = guard(async () => { await api('PUT', '/notify', { clearTelegram: true }); toast('success', 'Telegram retiré'); await load(false); renderNotify(); });
-$('#optMinRes').onchange = guard(async () => saveSetting({ minRes: +$('#optMinRes').value }, 'Filtre enregistré — utilisez « Retraiter les rejetés » pour retester'));
-$('#wordsSave').onclick = guard(async () => saveSetting({ excludeWords: $('#optWords').value }, 'Mots exclus enregistrés — utilisez « Retraiter les rejetés » pour retester'));
 
 /* ---------- Telegram ---------- */
-let TG = null;
-async function loadTg() {
-  try { TG = await api('GET', '/tg'); } catch (e) { toast('error', 'Erreur', e.message); return; }
-  renderTg();
-}
 function tgBox(title, ...kids) { return h('div', { class: 'diag-card' }, h('div', { class: 'diag-head' }, h('b', {}, title)), ...kids); }
 function renderTg() {
   const c = TG.config, st = TG.st;
   $('#tgChannel').value = c.channel; $('#tgKey').value = '';
   $('#tgKey').placeholder = c.keyHint ? 'Clé enregistrée (' + c.keyHint + ') — vide = inchangée' : 'AIza…';
-  $('#tgKeep').value = String(c.keepDays); $('#tgBadgeSw').checked = c.badge; $('#tgEnable').checked = c.enabled; $('#tgModel').value = c.model;
-  $('#tgBadge').replaceChildren(h('span', { class: 'badge ' + (c.enabled ? (st.lastError ? 'warning' : 'success') : 'muted'), title: st.lastError || '' },
-    c.enabled ? (st.lastError ? 'Active — erreur' : 'Active') : 'Désactivée'), st.lastRun ? h('small', { style: 'margin-left:10px;color:var(--text-muted)' }, 'dernière lecture ' + ago(st.lastRun)) : '');
-
-  // à vérifier
-  $('#tgReviewSec').hidden = !TG.review.length;
-  $('#tgReviewCount').textContent = TG.review.length ? TG.review.length + ' titre(s)' : '';
-  $('#tgReview').replaceChildren(...TG.review.map(r => {
-    const kind = h('select', { class: 'form-input', style: 'min-width:110px' }, h('option', { value: 'tv' }, 'Série'), h('option', { value: 'movie' }, 'Film'));
-    if (r.read.type === 'movie') kind.value = 'movie';
-    const tid = h('input', { class: 'form-input', style: 'max-width:150px', placeholder: 'ID TMDB', inputmode: 'numeric' });
-    const send = body => guard(async () => { await api('POST', '/tg/review', { id: r.id, ...body }); toast('success', 'Enregistré'); await loadTg(); })();
-    const ep = r.read.season != null ? 'S' + String(r.read.season).padStart(2, '0') + (r.read.episode != null ? 'E' + String(r.read.episode).padStart(2, '0') : '') : '';
-    return h('div', { class: 'diag-card' },
-      h('div', { class: 'diag-head' }, h('span', { class: 'badge warning' }, 'À vérifier'), h('b', {}, r.read.title), h('small', { style: 'color:var(--text-muted)' }, [ep, r.date, r.read.note].filter(Boolean).join(' · '))),
-      h('div', { class: 'diag-info' }, r.reason),
-      r.image ? h('a', { href: r.image, target: '_blank', rel: 'noopener' }, h('img', { src: r.image, referrerpolicy: 'no-referrer', alt: '', style: 'max-height:130px;border-radius:8px;margin-bottom:10px;display:block' })) : '',
-      h('div', { class: 'row-actions', style: 'justify-content:flex-start;flex-wrap:wrap;margin-bottom:10px' },
-        ...r.candidates.map((cd, i) => h('button', { class: 'btn btn-primary btn-small', onclick: () => send({ action: 'accept', index: i }) }, (cd.kind === 'movie' ? 'Film : ' : 'Série : ') + cd.name + ' (' + (cd.year || '?') + ') · ' + Math.round(cd.score * 100) + ' %'))),
-      h('div', { class: 'row-actions', style: 'justify-content:flex-start;flex-wrap:wrap' }, kind, tid,
-        h('button', { class: 'btn btn-ghost btn-small', onclick: () => send({ action: 'manual', kind: kind.value, tmdbId: tid.value }) }, 'Valider cet ID TMDB'),
-        h('button', { class: 'btn btn-ghost btn-small', onclick: () => send({ action: 'ignore' }) }, 'Ignorer')));
-  }));
-
-  // annonces
-  $('#tgCount').textContent = TG.entries.length ? TG.entries.length + ' titre(s)' : '';
-  $('#tgEntries').replaceChildren(TG.entries.length ? h('table', {}, h('thead', {}, h('tr', {}, ['', 'Type', 'Titre', 'Détail', 'État', 'IMDb', ''].map(x => h('th', {}, x)))),
-    h('tbody', {}, TG.entries.map(i => h('tr', {},
-      h('td', { style: 'width:52px' }, i.poster ? h('img', { class: 'thumb', src: i.poster, loading: 'lazy', alt: '' }) : ''),
-      h('td', {}, h('span', { class: 'badge ' + (i.anime ? 'warning' : i.type === 'movie' ? 'primary' : 'info') }, i.anime ? 'Animé' : i.type === 'movie' ? 'Film' : 'Série')),
-      h('td', {}, h('b', {}, i.name), i.year ? h('small', {}, ' (' + i.year + ')') : ''), h('td', {}, h('small', {}, i.desc)),
-      h('td', {}, h('span', { class: 'badge ' + (i.status === 'available' ? 'success' : 'muted') }, i.status === 'available' ? 'Torrent dispo' : 'Annoncé')),
-      h('td', {}, h('a', { class: 'btn-icon', href: 'https://www.imdb.com/title/' + i.id + '/', target: '_blank', rel: 'noopener', title: 'Ouvrir sur IMDb' }, icon('link'))),
-      h('td', {}, h('div', { class: 'row-actions' },
-        h('button', { class: 'btn-icon danger', title: 'Masquer définitivement ce titre', onclick: guard(async () => {
-          if (!(await confirmBox({ title: 'Masquer ce titre pour toujours ?', message: '« ' + i.name + ' » ne réapparaîtra dans aucun catalogue. Vous pourrez le débloquer dans Réglages > Filtres.', yes: 'Masquer' }))) return;
-          await api('POST', '/block', { id: i.id, type: i.type, name: i.name }); toast('success', 'Titre masqué'); await loadTg();
-        }) }, icon('block')),
-        h('button', { class: 'btn-icon danger', title: 'Retirer du catalogue', onclick: guard(async () => { await api('DELETE', '/item/' + encodeURIComponent(i.id) + '/' + i.type); toast('success', 'Titre retiré'); await loadTg(); }) }, icon('trash')))))))) :
-    h('div', { class: 'empty' }, c.enabled ? 'Aucune annonce pour le moment. Cliquez sur « Lancer un cycle » ou attendez la prochaine publication du canal.' : 'Activez la source Telegram ci-dessus pour remplir cette liste.'));
-
-  // journal
+  $('#tgEnable').checked = c.enabled; $('#tgModel').value = c.model;
+  $('#tgBadge').replaceChildren(h('span', { class: 'badge ' + (c.enabled ? (st.lastError ? 'warning' : 'success') : 'muted'), title: st.lastError || '' }, c.enabled ? (st.lastError ? 'Active — erreur' : 'Active') : 'Désactivée'),
+    st.lastRun ? h('small', { style: 'margin-left:10px;color:var(--text-muted)' }, 'dernière lecture ' + ago(st.lastRun)) : '');
   const tone = { ok: ['success', 'Ajouté'], review: ['warning', 'À vérifier'], err: ['danger', 'Erreur'], info: ['muted', 'Info'] };
   $('#tgLog').replaceChildren(TG.log.length ? h('table', {}, h('thead', {}, h('tr', {}, ['Quand', 'Type', 'Publication', 'Détail'].map(x => h('th', {}, x)))),
     h('tbody', {}, TG.log.slice(0, 40).map(x => h('tr', {}, h('td', {}, h('small', {}, ago(x.t))), h('td', {}, h('span', { class: 'badge ' + (tone[x.kind] || tone.info)[0] }, (tone[x.kind] || tone.info)[1])),
       h('td', {}, x.post ? h('code', {}, '#' + x.post) : ''), h('td', {}, x.text))))) : h('div', { class: 'empty' }, 'Le journal est vide.'));
 }
 const tgSettings = async patch => { await api('PUT', '/tg/config', patch); toast('success', 'Enregistré'); await loadTg(); await load(false); };
-$('#tgSave').onclick = guard(async () => {
-  await tgSettings({ channel: $('#tgChannel').value, geminiKey: $('#tgKey').value, keepDays: +$('#tgKeep').value, badge: $('#tgBadgeSw').checked, enabled: $('#tgEnable').checked });
-});
+$('#tgSave').onclick = guard(async () => tgSettings({ channel: $('#tgChannel').value, geminiKey: $('#tgKey').value, enabled: $('#tgEnable').checked }));
 $('#tgModelSave').onclick = guard(async () => tgSettings({ model: $('#tgModel').value }));
 $('#tgReload').onclick = guard(loadTg);
 $('#tgTest').onclick = guard(async () => {
@@ -1213,36 +791,131 @@ $('#tgAnalyze').onclick = guard(async () => {
       h('img', { src: r.post.image, referrerpolicy: 'no-referrer', alt: '', style: 'max-height:180px;border-radius:8px;margin-bottom:12px;display:block' }),
       r.general ? h('div', { class: 'hint', style: 'margin:0 0 10px' }, 'Date générale lue sur l\'image : ' + r.general) : '',
       r.rows.length ? h('div', { class: 'table-container' }, h('table', {}, h('thead', {}, h('tr', {}, ['Lu sur l\'image', 'Type', 'Résultat', 'Détail'].map(x => h('th', {}, x)))),
-        h('tbody', {}, r.rows.map(x => h('tr', {}, h('td', {}, h('b', {}, x.read.title), x.read.season != null ? h('small', {}, ' S' + String(x.read.season).padStart(2, '0') + (x.read.episode != null ? 'E' + String(x.read.episode).padStart(2, '0') : '')) : ''),
+        h('tbody', {}, r.rows.map(x => h('tr', {}, h('td', {}, h('b', {}, x.read.title), x.read.season != null ? h('small', {}, ' ' + ep2(x.read.season, x.read.episode)) : ''),
           h('td', {}, x.read.type === 'movie' ? 'Film' : x.read.type === 'series' ? 'Série' : '?'),
           h('td', {}, h('span', { class: 'badge ' + (x.auto ? 'success' : 'warning') }, x.auto ? 'Ajout auto' : 'À vérifier')),
           h('td', {}, h('small', {}, x.auto ? x.chosen : (x.reason || '') + (x.candidates.length ? ' — ' + x.candidates.map(c => c.name + ' (' + (c.year || '?') + ')').join(', ') : ''))))))))
         : h('div', { class: 'empty' }, 'Aucun titre lisible sur cette image.')));
   } catch (e) { $('#tgOut').replaceChildren(tgBox('Analyse impossible', h('div', { class: 'diag-info' }, h('span', { class: 'badge danger' }, 'Erreur'), ' ' + e.message))); } finally { b.disabled = false; }
 });
-$('#tgRun').onclick = guard(async () => {
-  const b = $('#tgRun'); b.disabled = true; b.firstChild.classList.add('spin');
-  toast('info', 'Cycle lancé', 'Jusqu\'à ' + (S ? S.run.budgetS : 50) + ' s — ne fermez pas la page.');
-  try { const x = await api('POST', '/refresh'); toast(x.skipped ? 'warning' : x.ok === false ? 'error' : 'success', x.skipped ? 'Cycle non lancé' : x.ok === false ? 'Erreur' : 'Cycle terminé', x.message); }
-  finally { b.firstChild.classList.remove('spin'); b.disabled = false; await loadTg(); await load(false); }
-});
 $('#tgReprocess').onclick = guard(async () => {
   if (!(await confirmBox({ title: 'Relire les derniers jours ?', message: 'Les images des 3 derniers jours seront relues au prochain cycle (les doublons ne sont pas recréés).', yes: 'Relire', danger: false }))) return;
-  await api('POST', '/tg/reprocess'); toast('success', 'Prévu au prochain cycle', 'Cliquez sur « Lancer un cycle ».');
-});
-$('#tgClear').onclick = guard(async () => {
-  if (!(await confirmBox({ title: 'Tout effacer ?', message: 'La liste des annonces, la file « À vérifier » et le journal Telegram sont vidés.', yes: 'Effacer' }))) return;
-  await api('POST', '/tg/clear'); toast('success', 'Effacé'); await loadTg(); await load(false);
+  await api('POST', '/tg/reprocess'); toast('success', 'Prévu au prochain cycle', 'Cliquez sur « Lancer un cycle » (tableau de bord).');
 });
 
-/* ---------- Installation (modale) ---------- */
+/* ---------- Trackers ---------- */
+function statusBadge(t) {
+  if (!t.enabled) return h('span', { class: 'badge muted' }, 'Désactivé');
+  if (!t.status) return h('span', { class: 'badge muted' }, 'Pas encore interrogé');
+  return t.status.ok ? h('span', { class: 'badge success' }, 'OK') : h('span', { class: 'badge danger', title: t.status.error }, 'Erreur');
+}
+function renderTrackers() {
+  $('#trCount').textContent = S.trackers.length ? S.trackers.length + ' tracker(s)' : '';
+  const box = $('#trBody');
+  if (!S.trackers.length) { box.replaceChildren(h('div', { class: 'empty' }, 'Aucun tracker. Sans tracker, les annonces restent « annoncées » (pas de badge ✅).')); return; }
+  box.replaceChildren(h('div', { class: 'table-container' }, h('table', {},
+    h('thead', {}, h('tr', {}, ['Nom', 'URL', 'Clé', 'État', 'Actif', ''].map(x => h('th', {}, x)))),
+    h('tbody', {}, S.trackers.map(t => {
+      const tst = h('button', { class: 'btn-icon', title: 'Tester la connexion' }, icon('play'));
+      tst.onclick = guard(async () => { tst.disabled = true; try { const r = await api('POST', `/trackers/${t.id}/test`); toast(r.ok ? 'success' : 'error', r.ok ? t.name : 'Échec du test', r.message); } finally { tst.disabled = false; } });
+      const sw = h('input', { type: 'checkbox', checked: t.enabled });
+      sw.onchange = guard(async () => { try { await api('PUT', '/trackers/' + t.id, { enabled: sw.checked }); await load(false); } catch (e) { sw.checked = !sw.checked; throw e; } });
+      return h('tr', {}, h('td', {}, h('b', {}, t.name)), h('td', { class: 'url-cell', title: t.url }, t.url), h('td', {}, h('code', {}, t.keyHint)),
+        h('td', {}, statusBadge(t)), h('td', {}, h('label', { class: 'switch' }, sw, h('span'))),
+        h('td', {}, h('div', { class: 'row-actions' }, tst,
+          h('button', { class: 'btn-icon', title: 'Modifier', onclick: () => openTracker(t) }, icon('edit')),
+          h('button', { class: 'btn-icon danger', title: 'Supprimer', onclick: guard(async () => {
+            if (!(await confirmBox({ title: 'Supprimer ce tracker ?', message: '« ' + t.name + ' » ne sera plus interrogé.', yes: 'Supprimer' }))) return;
+            await api('DELETE', '/trackers/' + t.id); toast('success', 'Tracker supprimé'); await load(false);
+          }) }, icon('trash')))));
+    })))));
+}
+let editing = null;
+function openTracker(t) {
+  editing = t || null;
+  $('#trModalTitle').textContent = t ? 'Modifier le tracker' : 'Ajouter un tracker';
+  $('#trName').value = t ? t.name : ''; $('#trUrl').value = t ? t.url : ''; $('#trKey').value = '';
+  $('#trKey').placeholder = t ? 'Clé enregistrée (' + t.keyHint + ') — vide = inchangée' : 'Clé API du tracker';
+  $('#trEnabled').checked = t ? t.enabled : true;
+  $('#trModal').classList.add('show'); $('#trName').focus();
+}
+const closeTracker = () => $('#trModal').classList.remove('show');
+$('#addTr').onclick = () => openTracker(null);
+$('#trCancel').onclick = closeTracker;
+$('#trModal').addEventListener('mousedown', e => { if (e.target.id === 'trModal') closeTracker(); });
+$('#trSave').onclick = guard(async () => {
+  const body = { name: $('#trName').value, url: $('#trUrl').value, apikey: $('#trKey').value, enabled: $('#trEnabled').checked };
+  if (editing) await api('PUT', '/trackers/' + editing.id, body); else await api('POST', '/trackers', body);
+  closeTracker(); toast('success', editing ? 'Tracker modifié' : 'Tracker ajouté'); await load(false);
+});
+
+/* ---------- Réglages ---------- */
+function titleExample(f) {
+  const t = 'Antigang';
+  return 'Exemple : ' + (f === 'plain' ? t : f === 'episode' ? t + ' · S02E15' : f === 'episode_date' ? t + ' · S02E15 · 30/09' : 'S02E15 · 30/09') + '   —   avec torrent : ✅ ' + (f === 'date_only' ? 'S02E15 · 30/09' : t);
+}
+function renderAutoBadge() { $('#autoBadge').replaceChildren(h('span', { class: 'badge ' + (S.settings.autoRefreshMin ? 'success' : 'muted') }, S.settings.autoRefreshMin ? 'Active' : 'Désactivée')); }
+function renderBlocked() {
+  $('#blkCount').textContent = S.blocked.length ? S.blocked.length + ' titre(s)' : '';
+  $('#blkList').replaceChildren(S.blocked.length ? h('div', {}, S.blocked.map(b => h('div', { class: 'blk' },
+    h('span', { class: 'badge ' + (b.type === 'movie' ? 'primary' : 'info') }, b.type === 'movie' ? 'Film' : 'Série'), h('span', { class: 'nm' }, h('b', {}, b.name), ' ', h('code', {}, b.id)),
+    h('button', { class: 'btn btn-ghost btn-small', onclick: guard(async () => { await api('DELETE', '/block/' + b.type + '/' + encodeURIComponent(b.id)); toast('success', 'Titre débloqué'); await load(false); renderBlocked(); }) }, 'Débloquer')))) :
+    h('div', { class: 'hint', style: 'margin:0' }, 'Aucun titre masqué.'));
+}
+function renderNotify() {
+  const n = S.notify;
+  $('#ntDiscord').value = ''; $('#ntToken').value = ''; $('#ntChat').value = n.telegramChat || '';
+  $('#ntDiscord').placeholder = n.discord ? 'Webhook enregistré (' + n.discord + ') — saisir une nouvelle URL pour le remplacer' : 'https://discord.com/api/webhooks/…';
+  $('#ntToken').placeholder = n.tokenHint ? 'Jeton enregistré (' + n.tokenHint + ') — vide = inchangé' : 'Jeton du bot, ex : 123456:ABC…';
+  $('#ntAvail').checked = n.onAvailable; $('#ntAnn').checked = n.onAnnounce;
+  $('#ntClearD').hidden = !n.discord; $('#ntClearT').hidden = !n.tokenHint && !n.telegramChat;
+  $('#notifyBadge').replaceChildren(h('span', { class: 'badge ' + (n.discordOk || n.telegram ? 'success' : 'muted') }, [n.discordOk ? 'Discord' : '', n.telegram ? 'Telegram' : ''].filter(Boolean).join(' + ') || 'Aucun canal'));
+}
+function renderSettings() {
+  const st = S.settings;
+  $('#tmdbBadge').replaceChildren(h('span', { class: 'badge ' + (S.tmdb.set ? 'success' : 'danger') }, S.tmdb.set ? 'Clé enregistrée ' + S.tmdb.hint : 'Non configurée'));
+  $('#tmdbKey').placeholder = S.tmdb.set ? 'Clé enregistrée — saisir une nouvelle valeur pour la remplacer' : 'Clé API v3 ou jeton v4';
+  $('#optStream').checked = st.streamInfo; $('#optKeep').value = String(st.keepDays);
+  document.querySelectorAll('#optTitle button').forEach(b => b.classList.toggle('active', b.dataset.f === st.titleFormat));
+  $('#titleExample').textContent = titleExample(st.titleFormat);
+  $('#optMinRes').value = String(st.minRes); $('#optCam').checked = st.hideCam;
+  $('#optAuto').value = String(st.autoRefreshMin); renderAutoBadge();
+  $('#cronUrl').textContent = location.origin + '/cron?key=SECRET'; $('#budgetS').textContent = S.run.budgetS;
+  renderNotify(); renderBlocked();
+}
+const saveSetting = async (patch, msg) => { await api('PUT', '/settings', patch); Object.assign(S.settings, patch); toast('success', msg || 'Enregistré'); };
+$('#tmdbSave').onclick = guard(async () => {
+  const k = $('#tmdbKey').value.trim(); if (!k) return toast('error', 'Clé manquante', 'Saisissez une clé TMDB.');
+  await api('PUT', '/tmdb', { key: k }); $('#tmdbKey').value = ''; toast('success', 'Clé TMDB enregistrée'); await load(false); renderSettings();
+});
+$('#tmdbTest').onclick = guard(async () => { const r = await api('POST', '/tmdb/test', { key: $('#tmdbKey').value }); toast(r.ok ? 'success' : 'error', r.ok ? 'TMDB' : 'Échec du test', r.message); });
+$('#optTitle').addEventListener('click', guard(async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  await saveSetting({ titleFormat: b.dataset.f }, 'Affichage enregistré — visible dans Stremio d\'ici quelques minutes');
+  document.querySelectorAll('#optTitle button').forEach(x => x.classList.toggle('active', x === b)); $('#titleExample').textContent = titleExample(b.dataset.f);
+}));
+$('#optStream').onchange = guard(async () => saveSetting({ streamInfo: $('#optStream').checked }, 'Option enregistrée — réinstallez l\'addon dans Stremio pour l\'appliquer'));
+$('#optKeep').onchange = guard(async () => saveSetting({ keepDays: +$('#optKeep').value }, 'Durée enregistrée'));
+$('#optMinRes').onchange = guard(async () => saveSetting({ minRes: +$('#optMinRes').value }, 'Qualité minimale enregistrée'));
+$('#optCam').onchange = guard(async () => saveSetting({ hideCam: $('#optCam').checked }, 'Option enregistrée'));
+$('#optAuto').onchange = guard(async () => { await saveSetting({ autoRefreshMin: +$('#optAuto').value }, 'Fréquence enregistrée'); renderAutoBadge(); renderDashboard(); });
+$('#copyCron').onclick = () => copy($('#cronUrl').textContent);
+$('#ntSave').onclick = guard(async () => {
+  await api('PUT', '/notify', { discord: $('#ntDiscord').value, telegramToken: $('#ntToken').value, telegramChat: $('#ntChat').value, onAvailable: $('#ntAvail').checked, onAnnounce: $('#ntAnn').checked });
+  toast('success', 'Notifications enregistrées'); await load(false); renderNotify();
+});
+$('#ntAvail').onchange = guard(async () => { await api('PUT', '/notify', { onAvailable: $('#ntAvail').checked }); S.notify.onAvailable = $('#ntAvail').checked; toast('success', 'Enregistré'); });
+$('#ntAnn').onchange = guard(async () => { await api('PUT', '/notify', { onAnnounce: $('#ntAnn').checked }); S.notify.onAnnounce = $('#ntAnn').checked; toast('success', 'Enregistré'); });
+$('#ntTest').onclick = guard(async () => { const r = await api('POST', '/notify/test'); toast(r.ok ? 'success' : 'error', r.ok ? 'Test envoyé' : 'Échec du test', r.message); });
+$('#ntClearD').onclick = guard(async () => { await api('PUT', '/notify', { clearDiscord: true }); toast('success', 'Discord retiré'); await load(false); renderNotify(); });
+$('#ntClearT').onclick = guard(async () => { await api('PUT', '/notify', { clearTelegram: true }); toast('success', 'Telegram retiré'); await load(false); renderNotify(); });
+
+/* ---------- Installation (fenêtre) ---------- */
 function renderInstall() {
-  $('#installBody').replaceChildren(...Object.keys(S.langs).map(l => {
-    const u = location.origin + '/' + l + '/manifest.json';
-    return h('div', { class: 'install-row' }, h('div', {}, h('div', { class: 't' }, S.langs[l]), h('code', {}, u)),
-      h('div', { class: 'row-actions' }, h('button', { class: 'btn btn-ghost btn-small', onclick: () => copy(u) }, icon('copy'), 'Copier'),
-        h('a', { class: 'btn btn-primary btn-small', href: 'stremio://' + location.host + '/' + l + '/manifest.json' }, icon('download'), 'Installer')));
-  }));
+  const u = location.origin + '/manifest.json';
+  $('#installBody').replaceChildren(h('div', {}, h('code', {}, u)),
+    h('div', { class: 'row-actions' }, h('button', { class: 'btn btn-ghost btn-small', onclick: () => copy(u) }, icon('copy'), 'Copier'),
+      h('a', { class: 'btn btn-primary btn-small', href: 'stremio://' + location.host + '/manifest.json' }, icon('download'), 'Installer')));
 }
 $('#installBtn').onclick = () => $('#installModal').classList.add('show');
 $('#installClose').onclick = () => $('#installModal').classList.remove('show');
