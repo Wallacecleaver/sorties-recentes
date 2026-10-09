@@ -460,6 +460,7 @@ async function botUpdate(upd) {
   if (!(await kv.setNx('sr:bot:u:' + upd.update_id, 1, 6 * 3600))) return; // Telegram peut renvoyer la même mise à jour
   if (!cfg.tg.geminiKey) return say('⚠️ Clé Gemini manquante : ajoutez-la dans le dashboard (onglet Telegram).');
   if (!cfg.tmdbKey) return say('⚠️ Clé TMDB manquante : ajoutez-la dans le dashboard (onglet Réglages).');
+  say('📥 Image reçue, lecture en cours (10 à 30 secondes)…');
   const now = Date.now(), post = { id: 'b' + msg.message_id, date: ((msg.forward_origin && msg.forward_origin.date) || msg.forward_date || msg.date) * 1000 };
   let read;
   try {
@@ -470,7 +471,11 @@ async function botUpdate(upd) {
     const buf = Buffer.from(await r.arrayBuffer()), mime = tgm.sniffMime(buf);
     if (!mime || buf.length > 6e6) throw new Error('image illisible ou trop lourde');
     read = await tgm.readImage(cfg.tg.geminiKey, cfg.tg.model, { buf, mime }, tgm.parisDate(now));
-  } catch (e) { return say('⚠️ ' + (e.quota ? 'Limite gratuite de Gemini atteinte : renvoyez cette image un peu plus tard.' : e.message)); }
+  } catch (e) {
+    const msgErr = e.quota ? 'Limite gratuite de Gemini atteinte : renvoyez cette image un peu plus tard.' : /timeout|aborted/i.test(e.message) ? 'Gemini met trop de temps à répondre : renvoyez l\'image dans un instant.' : e.message;
+    await kv.set(KEY.log, [{ t: Date.now(), kind: 'err', text: 'Bot : ' + msgErr, post: post.id }].concat((await kv.get(KEY.log)) || []).slice(0, 80)).catch(() => {});
+    return say('⚠️ ' + msgErr);
+  }
   if (!read.items.length) return say('Je n\'ai lu aucun titre sur cette image.');
   const out = { announced: [], auto: 0, review: 0 }, res = [], logs = [];
   try {
@@ -812,7 +817,10 @@ async function handler(req, res) {
       if (!b.token || !b.secret || !safeEq(seg[2], b.secret) || !safeEq(given, b.secret)) return send(res, 403, 'text/plain; charset=utf-8', 'Refusé');
       let raw = ''; for await (const c of req) { raw += c; if (raw.length > 2e5) break; }
       let upd = null; try { upd = JSON.parse(raw); } catch { /* ignoré */ }
-      const p = upd ? botUpdate(upd).catch(e => log('bot :', e.message)) : Promise.resolve();
+      const p = upd ? botUpdate(upd).catch(async e => { // jamais de silence : l'erreur est renvoyée à l'utilisateur et notée dans le journal
+        log('bot :', e.message);
+        try { const c = await getConfig(); if (c.bot.token && c.bot.owner) await tgApi(c.bot.token, 'sendMessage', { chat_id: c.bot.owner, text: '⚠️ Erreur : ' + String(e.message).slice(0, 300) }); } catch { /* rien de plus à faire */ }
+      }) : Promise.resolve();
       if (waitUntil) waitUntil(p);
       return send(res, 200, 'text/plain; charset=utf-8', 'ok'); // répond tout de suite ; la lecture se poursuit après
     }
