@@ -88,6 +88,7 @@ module.exports = function createDashboard(core, { password }) {
         if (a.length === 1 && m === 'GET') return json(res, await core.tgState());
         const op = a[1];
         if (op === 'config' && m === 'PUT') { await core.setTg(await readBody(req)); return json(res, OK); }
+        if (op === 'bot' && m === 'PUT') return json(res, await core.setBot(await readBody(req), 'https://' + String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim()));
         if (op === 'test' && m === 'POST') return json(res, await core.tgTest());
         if (op === 'analyze' && m === 'POST') return json(res, await core.tgAnalyze());
         if (op === 'review' && m === 'POST') { await core.tgReview(await readBody(req)); return json(res, OK); }

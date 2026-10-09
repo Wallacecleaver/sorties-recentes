@@ -308,6 +308,25 @@ textarea.form-input{min-height:84px;resize:vertical}
     <!-- ===== Telegram ===== -->
     <div class="page" id="page-telegram">
       <div class="section">
+        <div class="section-header"><div class="section-title"><span data-icon="send"></span>Bot Telegram (transfert des images)</div><span id="botBadge"></span></div>
+        <div class="section-body">
+          <p class="hint" style="margin-top:0;margin-bottom:16px">Quand le canal n'a pas d'aperçu public, vous créez votre propre bot : vous lui transférez les images d'annonce, et il fait le reste (lecture par l'IA, recherche TMDB, ajout dans Stremio) en quelques secondes. Vous pouvez sélectionner plusieurs images d'un coup dans Telegram.</p>
+          <div id="botInfo"></div>
+          <div class="input-row" id="botForm"><input class="form-input" id="botToken" type="password" autocomplete="off" placeholder="Jeton du bot (123456:ABC…)"><button class="btn btn-solid" id="botSave">Relier le bot</button></div>
+          <div class="section-buttons" style="margin-top:12px"><button class="btn btn-ghost" id="botReset" hidden>Changer de compte relié</button><button class="btn btn-ghost" id="botRemove" hidden>Retirer le bot</button></div>
+          <details id="botHelp" open>
+            <summary>Créer le bot (2 minutes)</summary>
+            <ol style="padding-left:20px;line-height:1.9;color:var(--text-secondary)">
+              <li>Dans Telegram, ouvrez <b>@BotFather</b> et envoyez <code>/newbot</code>.</li>
+              <li>Choisissez un nom puis un identifiant finissant par <code>bot</code>. BotFather vous donne un <b>jeton</b> (une longue ligne avec « : »).</li>
+              <li>Collez le jeton ci-dessus et cliquez sur « Relier le bot ».</li>
+              <li>Un code apparaît ici. Ouvrez votre bot dans Telegram et envoyez-lui <code>/start</code> suivi du code : le bot ne répond qu'à vous.</li>
+              <li>Transférez-lui les images d'annonce. Il vous répond avec ce qu'il a trouvé.</li>
+            </ol>
+          </details>
+        </div>
+      </div>
+      <div class="section">
         <div class="section-header"><div class="section-title"><span data-icon="send"></span>Source Telegram</div><span id="tgBadge"></span></div>
         <div class="section-body">
           <p class="hint" style="margin-top:0;margin-bottom:16px">L'addon lit les images d'annonce d'un canal Telegram public, les fait lire par l'IA gratuite de Google (Gemini), retrouve chaque titre sur TMDB et l'ajoute aux catalogues. Rien n'est republié : seuls les titres sont extraits.</p>
@@ -756,8 +775,20 @@ $('#annClear').onclick = guard(async () => {
 
 /* ---------- Telegram ---------- */
 function tgBox(title, ...kids) { return h('div', { class: 'diag-card' }, h('div', { class: 'diag-head' }, h('b', {}, title)), ...kids); }
+function renderBot() {
+  const b = TG.bot || {}, info = $('#botInfo');
+  $('#botBadge').replaceChildren(h('span', { class: 'badge ' + (b.set ? (b.bound ? 'success' : 'warning') : 'muted') }, b.set ? (b.bound ? 'Relié' : 'En attente du code') : 'Non créé'));
+  $('#botForm').hidden = b.set; $('#botReset').hidden = !(b.set && b.bound); $('#botRemove').hidden = !b.set;
+  $('#botHelp').open = !b.set || !b.bound;
+  info.replaceChildren(...(b.set ? [
+    h('p', { style: 'margin:0 0 10px' }, 'Bot : ', h('b', {}, b.username ? '@' + b.username : b.hint)),
+    b.bound ? h('p', { class: 'hint', style: 'margin:0 0 10px' }, 'Compte relié. Transférez-lui les images d\'annonce dans Telegram.')
+      : h('p', { style: 'margin:0 0 10px' }, 'Dernière étape : envoyez à votre bot ', h('code', {}, '/start ' + b.code)),
+  ] : []));
+}
 function renderTg() {
   const c = TG.config, st = TG.st;
+  renderBot();
   $('#tgChannel').value = c.channel; $('#tgKey').value = '';
   $('#tgKey').placeholder = c.keyHint ? 'Clé enregistrée (' + c.keyHint + ') — vide = inchangée' : 'AIza… ou AQ.…';
   $('#tgEnable').checked = c.enabled; $('#tgModel').value = c.model;
@@ -770,6 +801,9 @@ function renderTg() {
 }
 const tgSettings = async patch => { await api('PUT', '/tg/config', patch); toast('success', 'Enregistré'); await loadTg(); await load(false); };
 $('#tgSave').onclick = guard(async () => tgSettings({ channel: $('#tgChannel').value, geminiKey: $('#tgKey').value, enabled: $('#tgEnable').checked }));
+$('#botSave').onclick = guard(async () => { const r = await api('PUT', '/tg/bot', { token: $('#botToken').value }); $('#botToken').value = ''; toast('success', 'Bot relié', r.username ? '@' + r.username : ''); await loadTg(); await load(false); });
+$('#botReset').onclick = guard(async () => { await api('PUT', '/tg/bot', { resetOwner: true }); toast('success', 'Nouveau code généré'); await loadTg(); });
+$('#botRemove').onclick = guard(async () => { await api('PUT', '/tg/bot', { clear: true }); toast('success', 'Bot retiré'); await loadTg(); await load(false); });
 $('#tgModelSave').onclick = guard(async () => tgSettings({ model: $('#tgModel').value }));
 $('#tgReload').onclick = guard(loadTg);
 $('#tgTest').onclick = guard(async () => {

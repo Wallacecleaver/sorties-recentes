@@ -73,6 +73,7 @@ async function getConfig(force) {
       model: /^[\w.\-]{3,60}$/.test(tg.model || '') ? tg.model : 'gemini-flash-latest' },
     notify: { discord: String(n.discord || ''), telegramToken: String(n.telegramToken || ''), telegramChat: String(n.telegramChat || ''),
       onAnnounce: !!n.onAnnounce, onAvailable: n.onAvailable !== false },
+    bot: { token: String((c.bot || {}).token || ''), owner: String((c.bot || {}).owner || ''), code: String((c.bot || {}).code || ''), secret: String((c.bot || {}).secret || ''), username: String((c.bot || {}).username || '') },
     legacyPurged: !!c.legacyPurged,
   };
   cfgAt = Date.now();
@@ -198,6 +199,7 @@ function qualityOf(t) {
 }
 
 /* ------------------------------------------------------------------ titres masqués */
+const sourceOn = cfg => !!cfg.tg.geminiKey && (cfg.tg.enabled || !!cfg.bot.token); // canal public activé, ou bot relié
 const blockedSet = cfg => new Set((cfg.blocked || []).map(b => b.type + ':' + b.id));
 const unblocked = (cfg, list) => { if (!cfg.blocked.length) return list; const s = blockedSet(cfg); return list.filter(x => !s.has(x.type + ':' + x.id)); };
 
@@ -348,6 +350,36 @@ async function checkTrackers(cfg, items, trackers, deadline, note) {
   return flipped;
 }
 
+/* ------------------------------------------------------------------ rapprochement des titres lus sur une image */
+// Commun au canal public et au bot : TMDB, décision (zéro faux positif), catalogue ou file « À vérifier ».
+async function ingestItems(ctx, read, post, imgRef) {
+  const { env, now, items, review, blocked, note, out } = ctx, res = ctx.res || [];
+  for (const it of read.items) {
+    const dateStr = it.date || read.general || tgm.parisDate(Number.isFinite(post.date) ? post.date : now);
+    const dateMs = Date.parse(dateStr + 'T00:00:00Z');
+    if (isNaN(dateMs)) { note('err', 'Date illisible pour « ' + it.title + ' »', post.id); res.push({ k: 'err', title: it.title, text: 'date illisible' }); continue; }
+    const cands = await candidates(env, it), dec = decide(cands);
+    let reason = dec.reason, entry = null;
+    if (dec.cand) { const b = await buildEntry(env, dec.cand, it, dateMs, post); if (b.entry) entry = b.entry; else reason = b.reason; }
+    if (entry) {
+      if (blocked.has(entry.type + ':' + entry.id)) { note('info', '« ' + entry.name + ' » est masqué', post.id); res.push({ k: 'skip', title: it.title, name: entry.name, text: 'masqué' }); continue; }
+      const known = items.find(x => x.id === entry.id && x.type === entry.type && x.date === entry.date && x.season === entry.season && x.episode === entry.episode);
+      if (known) { note('info', '« ' + entry.name + ' » déjà dans le catalogue', post.id); res.push({ k: 'known', title: it.title, name: entry.name }); continue; }
+      if (addEntry(items, entry)) out.announced.push(entry);
+      out.auto++; note('ok', '« ' + it.title + ' » → ' + entry.name + ' (' + entry.desc + ')', post.id); res.push({ k: 'ok', title: it.title, name: entry.name, text: entry.desc });
+    } else if (reason === NOIMDB) { note('info', '« ' + it.title + ' » ignoré : ' + reason, post.id); res.push({ k: 'skip', title: it.title, text: reason }); }
+    else {
+      const rid = post.id + ':' + tgm.fold(it.title).slice(0, 40);
+      if (!review.some(x => x.id === rid)) {
+        review.unshift({ id: rid, post: post.id, ts: Number.isFinite(post.date) ? post.date : now, date: dateStr, read: it, reason: reason || 'incertain', image: imgRef || null,
+          candidates: cands.slice(0, 4).map(c => ({ kind: c.kind, id: c.id, name: c.name, year: c.year, poster: c.poster, score: Math.round(c.score * 100) / 100 })) });
+        out.review++;
+      }
+      note('review', '« ' + it.title + ' » à vérifier : ' + reason, post.id); res.push({ k: 'review', title: it.title, text: reason || 'incertain' });
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ lecture du canal Telegram */
 // Lit les nouvelles images, les fait analyser, rapproche les titres de TMDB, puis vérifie les trackers.
 async function pipeline(cfg, trackers, deadline) {
@@ -358,10 +390,11 @@ async function pipeline(cfg, trackers, deadline) {
   let items = (await kv.get(KEY.items)) || [], review = (await kv.get(KEY.review)) || [];
   const env = { m: cfg.tmdbKey };
   const note = (kind, text, post) => logs.push({ t: Date.now(), kind, text, post: post || null });
+  const ctx = { env, now, items, review, blocked, note, out };
   const readDeadline = Math.min(deadline, now + 30000); // la vérification des trackers garde du temps
   try {
-    const posts = await tgm.fetchChannel(tg.channel);
-    st.lastSeen = posts[posts.length - 1].id;
+    const posts = tg.enabled ? await tgm.fetchChannel(tg.channel) : []; // canal désactivé : seules les images reçues par le bot comptent
+    if (posts.length) st.lastSeen = posts[posts.length - 1].id;
     let todo = posts.filter(p => p.images.length && p.id > st.lastId);
     if (!st.lastId) todo = todo.filter(p => p.date > now - 3 * DAY).slice(-5); // premier passage : seulement le récent
     out.posts = todo.length;
@@ -374,30 +407,7 @@ async function pipeline(cfg, trackers, deadline) {
           const read = await tgm.readImage(tg.geminiKey, tg.model, img, tgm.parisDate(now));
           out.read += read.items.length;
           if (!read.items.length) note('info', 'Aucun titre lisible sur l\'image', p.id);
-          for (const it of read.items) {
-            const dateStr = it.date || read.general || tgm.parisDate(Number.isFinite(p.date) ? p.date : now);
-            const dateMs = Date.parse(dateStr + 'T00:00:00Z');
-            if (isNaN(dateMs)) { note('err', 'Date illisible pour « ' + it.title + ' »', p.id); continue; }
-            const cands = await candidates(env, it), dec = decide(cands);
-            let reason = dec.reason, entry = null;
-            if (dec.cand) { const b = await buildEntry(env, dec.cand, it, dateMs, p); if (b.entry) entry = b.entry; else reason = b.reason; }
-            if (entry) {
-              if (blocked.has(entry.type + ':' + entry.id)) { note('info', '« ' + entry.name + ' » est masqué', p.id); continue; }
-              const known = items.find(x => x.id === entry.id && x.type === entry.type && x.date === entry.date && x.season === entry.season && x.episode === entry.episode);
-              if (known) { note('info', '« ' + entry.name + ' » déjà dans le catalogue', p.id); continue; }
-              if (addEntry(items, entry)) out.announced.push(entry);
-              out.auto++; note('ok', '« ' + it.title + ' » → ' + entry.name + ' (' + entry.desc + ')', p.id);
-            } else if (reason === NOIMDB) note('info', '« ' + it.title + ' » ignoré : ' + reason, p.id);
-            else {
-              const rid = p.id + ':' + tgm.fold(it.title).slice(0, 40);
-              if (!review.some(x => x.id === rid)) {
-                review.unshift({ id: rid, post: p.id, ts: Number.isFinite(p.date) ? p.date : now, date: dateStr, read: it, reason: reason || 'incertain', image: imgUrl,
-                  candidates: cands.slice(0, 4).map(c => ({ kind: c.kind, id: c.id, name: c.name, year: c.year, poster: c.poster, score: Math.round(c.score * 100) / 100 })) });
-                out.review++;
-              }
-              note('review', '« ' + it.title + ' » à vérifier : ' + reason, p.id);
-            }
-          }
+          await ingestItems(ctx, read, p, imgUrl);
         } catch (e) { failed = e; if (e.quota) break; }
       }
       if (failed) {
@@ -417,6 +427,66 @@ async function pipeline(cfg, trackers, deadline) {
   return out;
 }
 
+/* ------------------------------------------------------------------ bot Telegram : images transférées à la main */
+async function tgApi(token, method, body) { // le jeton n'apparaît jamais dans les erreurs
+  const r = await fetch('https://api.telegram.org/bot' + token + '/' + method, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(15000) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) throw new Error('Telegram : ' + (j.description || 'HTTP ' + r.status));
+  return j.result;
+}
+const newCode = () => crypto.randomBytes(5).toString('hex');
+const BOT_HELP = '👋 Transférez-moi les images d\'annonce du canal (vous pouvez en sélectionner plusieurs).\nJe lis les titres, je les cherche sur TMDB et je les ajoute à Stremio.';
+async function withLock(fn) { // même verrou que le cycle : jamais deux écritures en même temps
+  const until = Date.now() + 50000;
+  while (!(await kv.setNx(KEY.lock, Date.now(), 45))) { if (Date.now() > until) throw new Error('le serveur est occupé, réessayez dans une minute'); await sleep(800); }
+  try { return await fn(); } finally { await kv.del(KEY.lock).catch(() => {}); }
+}
+async function botUpdate(upd) {
+  const cfg = await getConfig(true), b = cfg.bot, msg = upd && upd.message;
+  if (!b.token || !msg || !msg.chat || msg.chat.type !== 'private') return;
+  const chat = String(msg.chat.id), say = t => tgApi(b.token, 'sendMessage', { chat_id: msg.chat.id, text: String(t).slice(0, 3900), disable_web_page_preview: true }).catch(() => {});
+  const text = String(msg.text || '').trim();
+  if (/^\/start/i.test(text)) {
+    const given = text.split(/\s+/)[1] || '';
+    if (b.owner) { if (b.owner === chat) await say(BOT_HELP); return; }
+    if (given && b.code && safeEq(given, b.code)) { b.owner = chat; b.code = ''; await saveConfig(cfg); await say('✅ Bot relié à votre compte.\n\n' + BOT_HELP); }
+    else await say('Envoyez /start suivi du code affiché dans le dashboard (onglet Telegram).');
+    return;
+  }
+  if (!b.owner || b.owner !== chat) return; // seul le propriétaire est écouté
+  const doc = msg.document && /^image\//.test(msg.document.mime_type || '') ? msg.document : null;
+  const fileId = msg.photo && msg.photo.length ? msg.photo[msg.photo.length - 1].file_id : doc ? doc.file_id : null;
+  if (!fileId) { if (text && !text.startsWith('/')) await say('Je ne lis que les images : transférez-moi les affiches d\'annonce.'); else if (text) await say(BOT_HELP); return; }
+  if (!(await kv.setNx('sr:bot:u:' + upd.update_id, 1, 6 * 3600))) return; // Telegram peut renvoyer la même mise à jour
+  if (!cfg.tg.geminiKey) return say('⚠️ Clé Gemini manquante : ajoutez-la dans le dashboard (onglet Telegram).');
+  if (!cfg.tmdbKey) return say('⚠️ Clé TMDB manquante : ajoutez-la dans le dashboard (onglet Réglages).');
+  const now = Date.now(), post = { id: 'b' + msg.message_id, date: ((msg.forward_origin && msg.forward_origin.date) || msg.forward_date || msg.date) * 1000 };
+  let read;
+  try {
+    const f = await tgApi(b.token, 'getFile', { file_id: fileId });
+    if (!f.file_path) throw new Error('fichier introuvable');
+    const r = await fetch('https://api.telegram.org/file/bot' + b.token + '/' + f.file_path, { signal: AbortSignal.timeout(20000) });
+    if (!r.ok) throw new Error('téléchargement impossible (HTTP ' + r.status + ')');
+    const buf = Buffer.from(await r.arrayBuffer()), mime = tgm.sniffMime(buf);
+    if (!mime || buf.length > 6e6) throw new Error('image illisible ou trop lourde');
+    read = await tgm.readImage(cfg.tg.geminiKey, cfg.tg.model, { buf, mime }, tgm.parisDate(now));
+  } catch (e) { return say('⚠️ ' + (e.quota ? 'Limite gratuite de Gemini atteinte : renvoyez cette image un peu plus tard.' : e.message)); }
+  if (!read.items.length) return say('Je n\'ai lu aucun titre sur cette image.');
+  const out = { announced: [], auto: 0, review: 0 }, res = [], logs = [];
+  try {
+    await withLock(async () => {
+      const blocked = blockedSet(cfg), items = (await kv.get(KEY.items)) || [], review = (await kv.get(KEY.review)) || [];
+      const note = (kind, text, p) => logs.push({ t: Date.now(), kind, text, post: p || null });
+      await ingestItems({ env: { m: cfg.tmdbKey }, now, items, review, blocked, note, out, res }, read, post, null);
+      await kv.set(KEY.items, items.filter(x => x.ts > now - cfg.keepDays * DAY)); await kv.set(KEY.review, review.filter(x => x.ts > now - 14 * DAY).slice(0, 50));
+      if (logs.length) await kv.set(KEY.log, logs.reverse().concat((await kv.get(KEY.log)) || []).slice(0, 80));
+    });
+  } catch (e) { return say('⚠️ ' + e.message); }
+  const line = x => x.k === 'ok' ? '✅ ' + x.name + ' — ' + x.text : x.k === 'review' ? '🔎 « ' + x.title + ' » à vérifier (' + x.text + ')' : x.k === 'known' ? 'ℹ️ ' + x.name + ' : déjà dans le catalogue' : 'ℹ️ « ' + x.title + ' » ignoré' + (x.text ? ' : ' + x.text : '');
+  await say(res.map(line).join('\n') + (out.review ? '\n\nLes titres « à vérifier » se valident dans le dashboard, onglet Annonces.' : ''));
+  if (out.announced.length) { try { await runNotify(cfg, out.announced, []); } catch { /* notification facultative */ } }
+}
+
 /* ------------------------------------------------------------------ cycle (borné dans le temps) */
 const LEGACY_KEYS = ['sr:items:all', 'sr:items:vf', 'sr:items:vff', 'sr:seen:all', 'sr:seen:vf', 'sr:seen:vff', 'sr:new:all', 'sr:new:vf', 'sr:new:vff', 'sr:newseen', 'sr:log', 'sr:dvds'];
 async function cycle(budgetMs = CYCLE_BUDGET_MS) {
@@ -425,7 +495,7 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
   try {
     const cfg = await getConfig(true);
     if (!cfg.tmdbKey) return { skipped: true, message: 'Clé TMDB manquante : ajoutez-la dans l\'onglet Réglages.' };
-    if (!cfg.tg.enabled || !cfg.tg.geminiKey) return { skipped: true, message: 'Source Telegram non activée : ajoutez la clé Gemini et activez-la dans l\'onglet Telegram.' };
+    if (!sourceOn(cfg)) return { skipped: true, message: 'Source Telegram non activée : ajoutez la clé Gemini, puis créez le bot (ou activez le canal) dans l\'onglet Telegram.' };
     if (!cfg.legacyPurged) { // nettoyage unique des données de l'ancien système
       for (const k of LEGACY_KEYS) await kv.del(k).catch(() => {});
       cfg.legacyPurged = true; await saveConfig(cfg);
@@ -453,7 +523,7 @@ async function cycle(budgetMs = CYCLE_BUDGET_MS) {
 async function maybeAutoRefresh() {
   try {
     const cfg = await getConfig();
-    if (!cfg.autoRefreshMin || !cfg.tmdbKey || !cfg.tg.enabled || !cfg.tg.geminiKey) return;
+    if (!cfg.autoRefreshMin || !cfg.tmdbKey || !sourceOn(cfg)) return;
     if (!(await kv.setNx(KEY.auto, Date.now(), cfg.autoRefreshMin * 60))) return; // déjà tenté récemment
     const p = cycle().catch(e => log('auto :', e.message));
     if (waitUntil) waitUntil(p);
@@ -516,6 +586,7 @@ function cleanUrl(u) {
   x.searchParams.delete('apikey');
   return x.toString();
 }
+const botInfo = cfg => ({ set: !!cfg.bot.token, username: cfg.bot.username, hint: mask(cfg.bot.token), bound: !!cfg.bot.owner, code: cfg.bot.owner ? '' : cfg.bot.code });
 const core = {
   async getState() {
     const cfg = await getConfig(true), run = (await kv.get(KEY.run)) || {}, st = (await kv.get(KEY.tg)) || {};
@@ -531,6 +602,7 @@ const core = {
       blocked: cfg.blocked,
       tg: { enabled: cfg.tg.enabled, channel: cfg.tg.channel, keyHint: mask(cfg.tg.geminiKey), model: cfg.tg.model, count: items.length, available: items.filter(x => x.status === 'available').length,
         review: review.length, lastRun: st.lastRun || 0, lastError: st.lastError || null },
+      bot: botInfo(cfg),
       run: { busy: !!(await kv.get(KEY.lock)), last: run.last || 0, ms: run.ms || 0, budgetS: CYCLE_BUDGET_MS / 1000, notifyError: run.notifyError || null },
       history: (await kv.get(KEY.runs)) || [], latest, autoNext: autoAt && cfg.autoRefreshMin ? autoAt + cfg.autoRefreshMin * 60000 : null,
     };
@@ -634,7 +706,7 @@ const core = {
   async tgState() {
     const cfg = await getConfig(true), st = (await kv.get(KEY.tg)) || {}, t = cfg.tg;
     return {
-      config: { enabled: t.enabled, channel: t.channel, keyHint: mask(t.geminiKey), model: t.model },
+      config: { enabled: t.enabled, channel: t.channel, keyHint: mask(t.geminiKey), model: t.model }, bot: botInfo(cfg),
       entries: unblocked(cfg, (await kv.get(KEY.items)) || []).map(x => ({ id: x.id, type: x.type, anime: x.anime, name: x.name, year: x.year, poster: x.poster, desc: x.desc, date: x.date, ts: x.ts, status: x.status })),
       review: (await kv.get(KEY.review)) || [], log: (await kv.get(KEY.log)) || [],
       st: { lastId: st.lastId || 0, lastSeen: st.lastSeen || 0, lastRun: st.lastRun || 0, lastError: st.lastError || null },
@@ -656,6 +728,23 @@ const core = {
     if ('model' in o) { const m = String(o.model || '').trim(); if (!/^[\w.\-]{3,60}$/.test(m)) throw new Error('Nom de modèle invalide'); t.model = m; }
     if ('enabled' in o) { if (o.enabled && !t.geminiKey) throw new Error('Ajoutez d\'abord la clé Gemini'); t.enabled = !!o.enabled; }
     await saveConfig(c);
+  },
+  async setBot(o, origin) {
+    const c = await getConfig(true), b = c.bot;
+    if (o.clear) {
+      if (b.token) await tgApi(b.token, 'deleteWebhook', {}).catch(() => {});
+      c.bot = { token: '', owner: '', code: '', secret: '', username: '' }; await saveConfig(c); return {};
+    }
+    if (o.resetOwner) { b.owner = ''; b.code = newCode(); await saveConfig(c); return {}; }
+    const tok = String(o.token || '').trim();
+    if (!TG_TOKEN_RE.test(tok)) throw new Error('Jeton invalide : collez-le en entier tel que donné par @BotFather (forme 123456:ABC…)');
+    if (!/^https:\/\/[\w.\-]+(:\d+)?$/.test(origin || '')) throw new Error('Adresse du site introuvable (le bot nécessite le site en https)');
+    const me = await tgApi(tok, 'getMe');
+    if (b.token && b.token !== tok) await tgApi(b.token, 'deleteWebhook', {}).catch(() => {});
+    b.token = tok; b.username = me.username || ''; b.secret = crypto.randomBytes(16).toString('hex'); if (!b.owner && !b.code) b.code = newCode();
+    await tgApi(tok, 'setWebhook', { url: origin + '/tg/hook/' + b.secret, secret_token: b.secret, allowed_updates: ['message'], drop_pending_updates: true, max_connections: 2 });
+    await saveConfig(c);
+    return { username: b.username };
   },
   async tgTest() { // lit l'aperçu public du canal (sans Gemini)
     const cfg = await getConfig(true);
@@ -717,6 +806,15 @@ async function handler(req, res) {
       const given = (req.headers.authorization || '').replace(/^Bearer /, '') || url.searchParams.get('key') || '';
       if (!secret || !safeEq(given, secret)) return send(res, 401, 'text/plain; charset=utf-8', 'Non autorisé (définissez CRON_SECRET)');
       return json(res, await cycle(), { 'Cache-Control': 'no-store' });
+    }
+    if (seg[0] === 'tg' && seg[1] === 'hook' && seg.length === 3 && req.method === 'POST') { // webhook du bot Telegram
+      const cfg = await getConfig(true), b = cfg.bot, given = req.headers['x-telegram-bot-api-secret-token'] || '';
+      if (!b.token || !b.secret || !safeEq(seg[2], b.secret) || !safeEq(given, b.secret)) return send(res, 403, 'text/plain; charset=utf-8', 'Refusé');
+      let raw = ''; for await (const c of req) { raw += c; if (raw.length > 2e5) break; }
+      let upd = null; try { upd = JSON.parse(raw); } catch { /* ignoré */ }
+      const p = upd ? botUpdate(upd).catch(e => log('bot :', e.message)) : Promise.resolve();
+      if (waitUntil) waitUntil(p);
+      return send(res, 200, 'text/plain; charset=utf-8', 'ok'); // répond tout de suite ; la lecture se poursuit après
     }
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', '*');
