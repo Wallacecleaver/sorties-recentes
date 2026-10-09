@@ -70,7 +70,7 @@ async function getConfig(force) {
     hideCam: c.hideCam !== undefined ? !!c.hideCam : c.newHideCam !== false,           // ignorer les CAM / TS
     blocked: Array.isArray(c.blocked) ? c.blocked.slice(0, 300) : [],                  // titres masqués définitivement
     tg: { enabled: !!tg.enabled, channel: tgm.CHANNEL_RE.test(tg.channel || '') ? tg.channel : 'APPROTV', geminiKey: String(tg.geminiKey || ''),
-      model: /^[\w.\-]{3,60}$/.test(tg.model || '') ? tg.model : 'gemini-flash-latest' },
+      model: /^[\w.\-]{3,60}$/.test(tg.model || '') ? tg.model : 'gemini-3.5-flash-lite' },
     notify: { discord: String(n.discord || ''), telegramToken: String(n.telegramToken || ''), telegramChat: String(n.telegramChat || ''),
       onAnnounce: !!n.onAnnounce, onAvailable: n.onAvailable !== false },
     bot: { token: String((c.bot || {}).token || ''), owner: String((c.bot || {}).owner || ''), code: String((c.bot || {}).code || ''), secret: String((c.bot || {}).secret || ''), username: String((c.bot || {}).username || '') },
