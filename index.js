@@ -650,7 +650,7 @@ const core = {
     if (o.clearKey) { t.geminiKey = ''; t.enabled = false; }
     if (o.geminiKey && String(o.geminiKey).trim()) {
       const k = String(o.geminiKey).trim();
-      if (!/^[\w\-]{20,}$/.test(k)) throw new Error('Clé Gemini invalide (elle commence en général par « AIza »)');
+      if (!/^[\w.\-]{20,200}$/.test(k)) throw new Error('Clé Gemini invalide : copiez-la en entier depuis aistudio.google.com/apikey (lettres, chiffres, points et tirets)');
       t.geminiKey = k;
     }
     if ('model' in o) { const m = String(o.model || '').trim(); if (!/^[\w.\-]{3,60}$/.test(m)) throw new Error('Nom de modèle invalide'); t.model = m; }

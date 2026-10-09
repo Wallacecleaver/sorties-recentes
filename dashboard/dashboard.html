@@ -313,7 +313,7 @@ textarea.form-input{min-height:84px;resize:vertical}
           <p class="hint" style="margin-top:0;margin-bottom:16px">L'addon lit les images d'annonce d'un canal Telegram public, les fait lire par l'IA gratuite de Google (Gemini), retrouve chaque titre sur TMDB et l'ajoute aux catalogues. Rien n'est republié : seuls les titres sont extraits.</p>
           <div class="opt-grid">
             <div><div class="t">Canal Telegram</div><div class="d">Nom ou lien du canal public.</div><input class="form-input" id="tgChannel" placeholder="APPROTV ou https://t.me/APPROTV"></div>
-            <div><div class="t">Clé Gemini (gratuite)</div><div class="d">Voir « Obtenir la clé » plus bas.</div><input class="form-input" id="tgKey" type="password" autocomplete="off" placeholder="AIza…"></div>
+            <div><div class="t">Clé Gemini (gratuite)</div><div class="d">Voir « Obtenir la clé » plus bas.</div><input class="form-input" id="tgKey" type="password" autocomplete="off" placeholder="AIza… ou AQ.…"></div>
           </div>
           <div class="opt-block" style="margin-top:18px">
             <div class="setting-row"><div><div class="t">Activer la lecture du canal</div><div class="d" style="margin-bottom:0">Quand c'est activé, chaque cycle lit les nouvelles images du canal.</div></div><label class="switch"><input type="checkbox" id="tgEnable"><span></span></label></div>
@@ -329,7 +329,7 @@ textarea.form-input{min-height:84px;resize:vertical}
             <ol style="padding-left:20px;line-height:1.9;color:var(--text-secondary)">
               <li>Ouvrez <b>aistudio.google.com/apikey</b> et connectez-vous avec un compte Google.</li>
               <li>Cliquez sur « Create API key » (créer une clé API).</li>
-              <li>Copiez la clé (elle commence par <code>AIza</code>), collez-la ci-dessus, puis « Enregistrer ».</li>
+              <li>Copiez la clé (elle commence par <code>AIza</code> ou <code>AQ.</code>), collez-la ci-dessus, puis « Enregistrer ».</li>
               <li>Cliquez sur « Analyser la dernière image » : vous voyez ce que l'IA lit, sans rien enregistrer.</li>
             </ol>
             <p class="hint">L'offre gratuite de Google a des limites par minute et par jour ; quelques images par jour passent largement. Si la limite est atteinte, l'addon réessaie au cycle suivant.</p>
@@ -759,7 +759,7 @@ function tgBox(title, ...kids) { return h('div', { class: 'diag-card' }, h('div'
 function renderTg() {
   const c = TG.config, st = TG.st;
   $('#tgChannel').value = c.channel; $('#tgKey').value = '';
-  $('#tgKey').placeholder = c.keyHint ? 'Clé enregistrée (' + c.keyHint + ') — vide = inchangée' : 'AIza…';
+  $('#tgKey').placeholder = c.keyHint ? 'Clé enregistrée (' + c.keyHint + ') — vide = inchangée' : 'AIza… ou AQ.…';
   $('#tgEnable').checked = c.enabled; $('#tgModel').value = c.model;
   $('#tgBadge').replaceChildren(h('span', { class: 'badge ' + (c.enabled ? (st.lastError ? 'warning' : 'success') : 'muted'), title: st.lastError || '' }, c.enabled ? (st.lastError ? 'Active — erreur' : 'Active') : 'Désactivée'),
     st.lastRun ? h('small', { style: 'margin-left:10px;color:var(--text-muted)' }, 'dernière lecture ' + ago(st.lastRun)) : '');
