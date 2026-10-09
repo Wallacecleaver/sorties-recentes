@@ -279,19 +279,20 @@ function decide(cands) { // zéro faux positif : au moindre doute, le titre part
   if (recent.length === 1) return { cand: recent[0] };
   return { reason: 'plusieurs titres possibles : ' + [top, ...rivals].slice(0, 3).map(c => c.name + ' (' + (c.year || '?') + ')').join(' / ') };
 }
-async function buildEntry(env, cand, it, dateMs, post, force) { // entrée de catalogue à partir d'un titre TMDB choisi
+async function buildEntry(env, cand, it, dateMs, post, force, opt = {}) { // entrée de catalogue à partir d'un titre TMDB choisi
   const ts = Number.isFinite(post.date) ? post.date : Date.now();
+  const detail = (p) => opt.fresh ? tmdbFetch(env.m, p, new URLSearchParams({ language: 'fr-FR', append_to_response: 'external_ids' })) : tmdb(env, p, { append_to_response: 'external_ids' });
   if (cand.kind === 'movie') {
-    const d = await tmdb(env, '/movie/' + cand.id, { append_to_response: 'external_ids' });
-    const imdb = d && (d.imdb_id || (d.external_ids && d.external_ids.imdb_id));
-    if (!imdb) return { reason: NOIMDB };
+    const d = await detail('/movie/' + cand.id);
+    const imdb = opt.imdb || (d && (d.imdb_id || (d.external_ids && d.external_ids.imdb_id)));
+    if (!imdb) return { reason: NOIMDB, wait: { kind: 'movie', id: cand.id } };
     const e = { id: imdb, type: 'movie', anime: false, name: d.title || d.original_title, orig: d.original_title || '', poster: d.poster_path ? IMG + d.poster_path : undefined,
       year: (d.release_date || '').slice(0, 4), ts, date: dateMs, season: null, episode: null, status: 'announced', tmdb: cand.id, post: post.id };
     e.desc = entryDesc(e); return { entry: e };
   }
-  const d = await tmdb(env, '/tv/' + cand.id, { append_to_response: 'external_ids' });
-  const imdb = d && d.external_ids && d.external_ids.imdb_id;
-  if (!imdb) return { reason: NOIMDB };
+  const d = await detail('/tv/' + cand.id);
+  const imdb = opt.imdb || (d && d.external_ids && d.external_ids.imdb_id);
+  if (!imdb) return { reason: NOIMDB, wait: { kind: 'tv', id: cand.id } };
   if (!force && it.season != null && it.episode != null) { // l'épisode annoncé doit exister à une date cohérente
     const ep = await tmdb(env, `/tv/${cand.id}/season/${it.season}/episode/${it.episode}`);
     const air = ep && Date.parse(ep.air_date);
@@ -359,23 +360,23 @@ async function ingestItems(ctx, read, post, imgRef) {
     const dateMs = Date.parse(dateStr + 'T00:00:00Z');
     if (isNaN(dateMs)) { note('err', 'Date illisible pour « ' + it.title + ' »', post.id); res.push({ k: 'err', title: it.title, text: 'date illisible' }); continue; }
     const cands = await candidates(env, it), dec = decide(cands);
-    let reason = dec.reason, entry = null;
-    if (dec.cand) { const b = await buildEntry(env, dec.cand, it, dateMs, post); if (b.entry) entry = b.entry; else reason = b.reason; }
+    let reason = dec.reason, entry = null, wait = null;
+    if (dec.cand) { const b = await buildEntry(env, dec.cand, it, dateMs, post); if (b.entry) entry = b.entry; else { reason = b.reason; wait = b.wait || null; } }
     if (entry) {
       if (blocked.has(entry.type + ':' + entry.id)) { note('info', '« ' + entry.name + ' » est masqué', post.id); res.push({ k: 'skip', title: it.title, name: entry.name, text: 'masqué' }); continue; }
       const known = items.find(x => x.id === entry.id && x.type === entry.type && x.date === entry.date && x.season === entry.season && x.episode === entry.episode);
       if (known) { note('info', '« ' + entry.name + ' » déjà dans le catalogue', post.id); res.push({ k: 'known', title: it.title, name: entry.name }); continue; }
       if (addEntry(items, entry)) out.announced.push(entry);
       out.auto++; note('ok', '« ' + it.title + ' » → ' + entry.name + ' (' + entry.desc + ')', post.id); res.push({ k: 'ok', title: it.title, name: entry.name, text: entry.desc });
-    } else if (reason === NOIMDB) { note('info', '« ' + it.title + ' » ignoré : ' + reason, post.id); res.push({ k: 'skip', title: it.title, text: reason }); }
-    else {
+    } else {
+      if (wait) reason = 'trouvé sur TMDB (' + dec.cand.name + '), mais son ID IMDb n\'est pas encore publié : réessai automatique à chaque cycle (ou saisissez-le à la main)';
       const rid = post.id + ':' + tgm.fold(it.title).slice(0, 40);
       if (!review.some(x => x.id === rid)) {
-        review.unshift({ id: rid, post: post.id, ts: Number.isFinite(post.date) ? post.date : now, date: dateStr, read: it, reason: reason || 'incertain', image: imgRef || null,
+        review.unshift({ id: rid, post: post.id, ts: Number.isFinite(post.date) ? post.date : now, date: dateStr, read: it, reason: reason || 'incertain', image: imgRef || null, waitImdb: wait,
           candidates: cands.slice(0, 4).map(c => ({ kind: c.kind, id: c.id, name: c.name, year: c.year, poster: c.poster, score: Math.round(c.score * 100) / 100 })) });
         out.review++;
       }
-      note('review', '« ' + it.title + ' » à vérifier : ' + reason, post.id); res.push({ k: 'review', title: it.title, text: reason || 'incertain' });
+      note('review', '« ' + it.title + ' » à vérifier : ' + reason, post.id); res.push({ k: 'review', title: it.title, text: wait ? 'ID IMDb pas encore publié sur TMDB, réessai automatique' : (reason || 'incertain') });
     }
   }
 }
@@ -418,6 +419,17 @@ async function pipeline(cfg, trackers, deadline) {
       st.lastId = p.id; delete st.tries[p.id];
     }
   } catch (e) { out.error = e.message; note('err', e.message); }
+  for (const r of review.filter(x => x.waitImdb).slice(0, 6)) { // titres trouvés sur TMDB dont l'ID IMDb n'était pas encore publié
+    if (Date.now() > deadline) break;
+    try {
+      const b = await buildEntry(env, { kind: r.waitImdb.kind, id: r.waitImdb.id }, r.read, Date.parse(r.date + 'T00:00:00Z'), { id: r.post, date: r.ts }, true, { fresh: true });
+      if (!b.entry) continue;
+      review.splice(review.indexOf(r), 1);
+      if (blocked.has(b.entry.type + ':' + b.entry.id)) continue;
+      if (addEntry(items, b.entry)) out.announced.push(b.entry);
+      out.auto++; note('ok', '« ' + r.read.title + ' » : ID IMDb enfin publié → ' + b.entry.name + ' (' + b.entry.desc + ')', r.post);
+    } catch (e) { note('err', 'Réessai IMDb : ' + e.message, r.post); }
+  }
   items = items.filter(x => x.ts > now - cfg.keepDays * DAY);
   review = review.filter(x => x.ts > now - 14 * DAY).slice(0, 50);
   if (trackers.length) { try { out.flipped = await checkTrackers(cfg, items, trackers, deadline, note); out.found = out.flipped.length; } catch (e) { note('err', 'Trackers : ' + e.message); } }
@@ -782,7 +794,10 @@ const core = {
       if (o.action === 'accept') cand = r.candidates[+o.index];
       else if (o.action === 'manual') cand = { kind: o.kind === 'movie' ? 'movie' : 'tv', id: parseInt(o.tmdbId, 10) };
       if (!cand || !(cand.id > 0)) throw new Error('Choix invalide');
-      const built = await buildEntry({ m: cfg.tmdbKey }, cand, r.read, Date.parse(r.date + 'T00:00:00Z'), { id: r.post, date: r.ts }, true);
+      const imdb = String(o.imdb || '').trim().toLowerCase();
+      if (imdb && !/^tt\d{6,10}$/.test(imdb)) throw new Error('ID IMDb invalide (forme tt1234567, visible dans l\'adresse de la page IMDb)');
+      if (!cand.kind) cand.kind = (r.waitImdb && r.waitImdb.kind) || 'tv';
+      const built = await buildEntry({ m: cfg.tmdbKey }, cand, r.read, Date.parse(r.date + 'T00:00:00Z'), { id: r.post, date: r.ts }, true, { imdb: imdb || undefined, fresh: true });
       if (!built.entry) throw new Error(built.reason);
       const items = (await kv.get(KEY.items)) || [];
       addEntry(items, built.entry); await kv.set(KEY.items, items);
